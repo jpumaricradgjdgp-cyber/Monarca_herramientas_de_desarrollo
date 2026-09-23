@@ -6,6 +6,12 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ItemCarritoDto {
-    private Integer idProducto;
+
+    // Nuevo sistema
+    private Long idVariante;
+
+    // Compatibilidad temporal con el frontend antiguo
+    private Long idProducto;
+
     private Integer cantidad;
 }

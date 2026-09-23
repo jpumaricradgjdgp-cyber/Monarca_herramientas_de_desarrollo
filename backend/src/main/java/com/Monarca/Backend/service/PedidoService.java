@@ -2,69 +2,441 @@ package com.Monarca.Backend.service;
 
 import com.Monarca.Backend.dto.ItemCarritoDto;
 import com.Monarca.Backend.dto.PedidoRequestDto;
-import com.Monarca.Backend.model.*;
-import com.Monarca.Backend.repository.*;
+import com.Monarca.Backend.model.DetallePedido;
+import com.Monarca.Backend.model.MetodoPago;
+import com.Monarca.Backend.model.Pago;
+import com.Monarca.Backend.model.Pedido;
+import com.Monarca.Backend.model.Usuario;
+import com.Monarca.Backend.model.VarianteProducto;
+import com.Monarca.Backend.repository.DetallePedidoRepository;
+import com.Monarca.Backend.repository.MetodoPagoRepository;
+import com.Monarca.Backend.repository.PagoRepository;
+import com.Monarca.Backend.repository.PedidoRepository;
+import com.Monarca.Backend.repository.UsuarioRepository;
+import com.Monarca.Backend.repository.VarianteProductoRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class PedidoService {
 
-    @Autowired private PedidoRepository pedidoRepository;
-    @Autowired private ProductoRepository productoRepository;
-    @Autowired private UsuarioRepository usuarioRepository;
-    @Autowired private MetodoPagoRepository metodoPagoRepository; 
-    @Autowired private EstatusEnvioRepository estatusEnvioRepository; 
+    @Autowired
+    private PedidoRepository pedidoRepository;
+
+    @Autowired
+    private DetallePedidoRepository detallePedidoRepository;
+
+    @Autowired
+    private VarianteProductoRepository varianteRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private MetodoPagoRepository metodoPagoRepository;
+
+    @Autowired
+    private PagoRepository pagoRepository;
+
 
     @Transactional
-    public Pedido procesarCompra(PedidoRequestDto pedidoDto) {
-        
-        // 1. Obtener Usuario
-        Usuario usuario = usuarioRepository.findById(pedidoDto.getIdUsuario())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    public Pedido procesarCompra(
+            PedidoRequestDto pedidoDto
+    ) {
 
-        // 2. Crear y configurar Pedido base
-        Pedido pedido = new Pedido();
-        pedido.setUsuario(usuario);
-        pedido.setFechaPedido(LocalDateTime.now());
-        pedido.setEstado("PENDIENTE");
+        validarPedido(pedidoDto);
 
-        // 3. Asignar Método de Pago
-        MetodoPago metodo = metodoPagoRepository.findById(pedidoDto.getIdMetodoPago())
-            .orElseThrow(() -> new RuntimeException("Método de pago no encontrado"));
-        pedido.setMetodoPago(metodo);
 
-        // 4. Asignar Estatus de Envío
-        EstatusEnvio estatus = estatusEnvioRepository.findById(pedidoDto.getIdEstatusEnvio())
-            .orElseThrow(() -> new RuntimeException("Estatus de envío no encontrado"));
-        pedido.setEstatusEnvio(estatus);
+        // =====================================================
+        // 1. USUARIO
+        // =====================================================
 
-        // 5. Procesar Items, descontar stock y calcular total
-        Double totalCalculado = 0.0;
+        Usuario usuario =
+                usuarioRepository
+                        .findById(
+                                pedidoDto.getIdUsuario()
+                        )
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Usuario no encontrado"
+                                )
+                        );
 
-        for (ItemCarritoDto item : pedidoDto.getItems()) {
-            Producto producto = productoRepository.findById(item.getIdProducto())
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + item.getIdProducto()));
 
-            if (producto.getStockActual() < item.getCantidad()) {
-                throw new RuntimeException("Stock insuficiente: " + producto.getNombre());
-            }
+        // =====================================================
+        // 2. MÉTODO DE PAGO
+        // =====================================================
 
-            // Descontar stock del inventario
-            producto.setStockActual(producto.getStockActual() - item.getCantidad());
-            productoRepository.save(producto);
+        MetodoPago metodoPago =
+                metodoPagoRepository
+                        .findById(
+                                pedidoDto.getIdMetodoPago()
+                        )
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Método de pago no encontrado"
+                                )
+                        );
 
-            // Calcular precio y sumarlo al total del pedido
-            Double precioUnitario = producto.getPrecioBase().doubleValue();
-            totalCalculado += (precioUnitario * item.getCantidad());
+
+        if (!Boolean.TRUE.equals(
+                metodoPago.getActivo()
+        )) {
+
+            throw new RuntimeException(
+                    "El método de pago no está disponible"
+            );
         }
 
-        // 6. Asignar el total final y guardar (SIN los detalles)
-        pedido.setTotal(totalCalculado);
 
-        return pedidoRepository.save(pedido);
+        // =====================================================
+        // 3. PROCESAR ITEMS
+        // =====================================================
+
+        BigDecimal subtotalPedido =
+                BigDecimal.ZERO;
+
+        List<LineaTemporal> lineas =
+                new ArrayList<>();
+
+
+        for (ItemCarritoDto item
+                : pedidoDto.getItems()) {
+
+            if (item.getCantidad() == null
+                    || item.getCantidad() <= 0) {
+
+                throw new RuntimeException(
+                        "Cantidad inválida en el carrito"
+                );
+            }
+
+
+            VarianteProducto variante =
+                    obtenerVariante(item);
+
+
+            if (!Boolean.TRUE.equals(
+                    variante.getActivo()
+            )) {
+
+                throw new RuntimeException(
+                        "La variante "
+                                + variante.getSku()
+                                + " no está disponible"
+                );
+            }
+
+
+            if (variante.getStock()
+                    < item.getCantidad()) {
+
+                throw new RuntimeException(
+                        "Stock insuficiente para: "
+                                + variante
+                                .getProducto()
+                                .getNombre()
+                                + " - "
+                                + variante.getTalla()
+                                + " / "
+                                + variante.getColor()
+                );
+            }
+
+
+            BigDecimal precioUnitario =
+                    variante.getPrecio();
+
+
+            BigDecimal subtotalLinea =
+                    precioUnitario.multiply(
+                            BigDecimal.valueOf(
+                                    item.getCantidad()
+                            )
+                    );
+
+
+            // Descontar stock
+            variante.setStock(
+                    variante.getStock()
+                            - item.getCantidad()
+            );
+
+            varianteRepository.save(variante);
+
+
+            subtotalPedido =
+                    subtotalPedido.add(
+                            subtotalLinea
+                    );
+
+
+            lineas.add(
+                    new LineaTemporal(
+                            variante,
+                            item.getCantidad(),
+                            precioUnitario,
+                            subtotalLinea
+                    )
+            );
+        }
+
+
+        // =====================================================
+        // 4. CREAR PEDIDO
+        // =====================================================
+
+        Pedido pedido = new Pedido();
+
+        pedido.setUsuario(usuario);
+
+        pedido.setCodigoPedido(
+                generarCodigoPedido()
+        );
+
+        pedido.setEstado(
+                "PENDIENTE_PAGO"
+        );
+
+        pedido.setSubtotal(
+                subtotalPedido
+        );
+
+        pedido.setDescuento(
+                BigDecimal.ZERO
+        );
+
+        pedido.setCostoEnvio(
+                BigDecimal.ZERO
+        );
+
+        pedido.setTotal(
+                subtotalPedido
+        );
+
+
+        pedido =
+                pedidoRepository.save(pedido);
+
+
+        // =====================================================
+        // 5. DETALLES DEL PEDIDO
+        // =====================================================
+
+        for (LineaTemporal linea : lineas) {
+
+            VarianteProducto variante =
+                    linea.variante();
+
+            DetallePedido detalle =
+                    new DetallePedido();
+
+            detalle.setPedido(pedido);
+
+            detalle.setVariante(
+                    variante
+            );
+
+            detalle.setCantidad(
+                    linea.cantidad()
+            );
+
+            detalle.setPrecioUnitario(
+                    linea.precioUnitario()
+            );
+
+            detalle.setSubtotal(
+                    linea.subtotal()
+            );
+
+            // Snapshot
+            detalle.setNombreProducto(
+                    variante
+                            .getProducto()
+                            .getNombre()
+            );
+
+            detalle.setSku(
+                    variante.getSku()
+            );
+
+            detalle.setTalla(
+                    variante.getTalla()
+            );
+
+            detalle.setColor(
+                    variante.getColor()
+            );
+
+
+            detallePedidoRepository.save(
+                    detalle
+            );
+        }
+
+
+        // =====================================================
+        // 6. REGISTRO DEL PAGO
+        // =====================================================
+
+        Pago pago = new Pago();
+
+        pago.setPedido(pedido);
+
+        pago.setMetodoPago(
+                metodoPago
+        );
+
+        pago.setMonto(
+                pedido.getTotal()
+        );
+
+        pago.setEstado(
+                "PENDIENTE"
+        );
+
+
+        pagoRepository.save(pago);
+
+
+        return pedido;
+    }
+
+
+    private VarianteProducto obtenerVariante(
+            ItemCarritoDto item
+    ) {
+
+        // Sistema nuevo
+        if (item.getIdVariante() != null) {
+
+            return varianteRepository
+                    .findByIdForUpdate(
+                            item.getIdVariante()
+                    )
+                    .orElseThrow(() ->
+                            new RuntimeException(
+                                    "Variante no encontrada: "
+                                            + item.getIdVariante()
+                            )
+                    );
+        }
+
+
+        // Compatibilidad con frontend antiguo
+        if (item.getIdProducto() != null) {
+
+            List<VarianteProducto> variantes =
+                    varianteRepository
+                            .findByProducto_IdProductoAndActivoTrue(
+                                    item.getIdProducto()
+                            );
+
+
+            if (variantes.isEmpty()) {
+
+                throw new RuntimeException(
+                        "El producto no tiene variantes disponibles: "
+                                + item.getIdProducto()
+                );
+            }
+
+
+            if (variantes.size() > 1) {
+
+                throw new RuntimeException(
+                        "El producto "
+                                + item.getIdProducto()
+                                + " tiene varias tallas o colores. "
+                                + "El frontend debe enviar idVariante."
+                );
+            }
+
+
+            return varianteRepository
+                    .findByIdForUpdate(
+                            variantes
+                                    .get(0)
+                                    .getIdVariante()
+                    )
+                    .orElseThrow(() ->
+                            new RuntimeException(
+                                    "Variante no encontrada"
+                            )
+                    );
+        }
+
+
+        throw new RuntimeException(
+                "El item debe contener idVariante"
+        );
+    }
+
+
+    private void validarPedido(
+            PedidoRequestDto dto
+    ) {
+
+        if (dto == null) {
+            throw new RuntimeException(
+                    "Pedido inválido"
+            );
+        }
+
+
+        if (dto.getIdUsuario() == null) {
+
+            throw new RuntimeException(
+                    "Usuario requerido"
+            );
+        }
+
+
+        if (dto.getIdMetodoPago() == null) {
+
+            throw new RuntimeException(
+                    "Método de pago requerido"
+            );
+        }
+
+
+        if (dto.getItems() == null
+                || dto.getItems().isEmpty()) {
+
+            throw new RuntimeException(
+                    "El carrito está vacío"
+            );
+        }
+    }
+
+
+    private String generarCodigoPedido() {
+
+        String aleatorio =
+                UUID.randomUUID()
+                        .toString()
+                        .substring(0, 8)
+                        .toUpperCase();
+
+        return "MON-"
+                + System.currentTimeMillis()
+                + "-"
+                + aleatorio;
+    }
+
+
+    private record LineaTemporal(
+            VarianteProducto variante,
+            Integer cantidad,
+            BigDecimal precioUnitario,
+            BigDecimal subtotal
+    ) {
     }
 }

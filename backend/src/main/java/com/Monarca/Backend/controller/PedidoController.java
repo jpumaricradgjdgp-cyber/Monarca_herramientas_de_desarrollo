@@ -1,20 +1,20 @@
 package com.Monarca.Backend.controller;
 
-import com.Monarca.Backend.dto.OrdenDto;
 import com.Monarca.Backend.dto.PedidoRequestDto;
 import com.Monarca.Backend.model.Pedido;
-import com.Monarca.Backend.model.Producto;
 import com.Monarca.Backend.model.Usuario;
-import com.Monarca.Backend.repository.ProductoRepository;
+import com.Monarca.Backend.repository.PedidoRepository;
 import com.Monarca.Backend.repository.UsuarioRepository;
-import com.Monarca.Backend.repository.PedidoRepository; // <-- ¡ESTA ES LA LÍNEA QUE FALTABA!
 import com.Monarca.Backend.service.PedidoService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -25,65 +25,148 @@ public class PedidoController {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
-    private ProductoRepository productoRepository;
-
-    @Autowired
     private PedidoService pedidoService;
-    
+
     @Autowired
     private PedidoRepository pedidoRepository;
 
-   @GetMapping
-    // Quitamos la doble validación que estaba chocando y causando el 403
+
+    // =========================================================
+    // LISTAR PEDIDOS
+    // =========================================================
+
+    @GetMapping
     public ResponseEntity<?> listarTodosLosPedidos() {
-        // Retorna toda la tabla de pedidos a tu frontend
-        return ResponseEntity.ok(pedidoRepository.findAll());
+
+        List<Map<String, Object>> respuesta =
+                pedidoRepository
+                        .findAll()
+                        .stream()
+                        .map(pedido ->
+                                Map.<String, Object>of(
+                                        "idPedido",
+                                        pedido.getIdPedido(),
+
+                                        "codigoPedido",
+                                        pedido.getCodigoPedido(),
+
+                                        "estado",
+                                        pedido.getEstado(),
+
+                                        "subtotal",
+                                        pedido.getSubtotal(),
+
+                                        "total",
+                                        pedido.getTotal(),
+
+                                        "cliente",
+                                        pedido
+                                                .getUsuario()
+                                                .getCorreo(),
+
+                                        "fechaPedido",
+                                        pedido.getFechaPedido()
+                                )
+                        )
+                        .toList();
+
+
+        return ResponseEntity.ok(
+                respuesta
+        );
     }
-    // --- TU MÉTODO ORIGINAL RESTAURADO ---
+
+
+    // =========================================================
+    // CREAR PEDIDO
+    // =========================================================
+
     @PostMapping("/procesar")
-   public ResponseEntity<?> crearPedido(@RequestBody PedidoRequestDto pedidoRequest, Authentication authentication) {
-    System.out.println(">>> OBJETO RECIBIDO EN JAVA:");
-    System.out.println(">>> Total: " + pedidoRequest.getTotal());
-    System.out.println(">>> Items: " + pedidoRequest.getItems());
+    public ResponseEntity<?> crearPedido(
+            @RequestBody PedidoRequestDto pedidoRequest,
+            Authentication authentication
+    ) {
+
         try {
-            // 1. Identificamos al cliente a través de su Token JWT
-            String emailCliente = authentication.getName(); 
-            
-            // 2. Buscamos al cliente en la base de datos
-            Usuario usuario = usuarioRepository.findByEmail(emailCliente)
-                    .orElseThrow(() -> new RuntimeException("Cliente no encontrado o Token inválido"));
 
-            // 3. Le pasamos el ID del usuario validado a nuestro DTO para que el Service lo use
-            pedidoRequest.setIdUsuario(usuario.getIdUsuario());
+            if (authentication == null
+                    || !authentication.isAuthenticated()) {
 
-            // 4. Enviamos el carrito al servicio. Él calcula el precio real, descuenta stock y guarda todo.
-            Pedido pedidoGuardado = pedidoService.procesarCompra(pedidoRequest);
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body(
+                                Map.of(
+                                        "error",
+                                        "Usuario no autenticado"
+                                )
+                        );
+            }
 
-            // 5. Retornamos el pedido completo con Status 200 OK
-            return ResponseEntity.ok(pedidoGuardado);
+
+            // Usuario obtenido del JWT
+            String correoCliente =
+                    authentication.getName();
+
+
+            Usuario usuario =
+                    usuarioRepository
+                            .findByCorreoIgnoreCase(
+                                    correoCliente
+                            )
+                            .orElseThrow(() ->
+                                    new RuntimeException(
+                                            "Cliente no encontrado"
+                                    )
+                            );
+
+
+            // Nunca confiamos en el idUsuario
+            // enviado por el navegador.
+            pedidoRequest.setIdUsuario(
+                    usuario.getIdUsuario()
+            );
+
+
+            Pedido pedidoGuardado =
+                    pedidoService.procesarCompra(
+                            pedidoRequest
+                    );
+
+
+            Map<String, Object> response =
+                    Map.of(
+                            "mensaje",
+                            "Pedido registrado correctamente",
+
+                            "idPedido",
+                            pedidoGuardado.getIdPedido(),
+
+                            "codigoPedido",
+                            pedidoGuardado.getCodigoPedido(),
+
+                            "estado",
+                            pedidoGuardado.getEstado(),
+
+                            "total",
+                            pedidoGuardado.getTotal()
+                    );
+
+
+            return ResponseEntity.ok(
+                    response
+            );
+
 
         } catch (RuntimeException e) {
-            // Si el servicio detecta que no hay stock o hay un error, lo atrapamos aquí 
-            return ResponseEntity.badRequest().body(e.getMessage());
+
+            return ResponseEntity
+                    .badRequest()
+                    .body(
+                            Map.of(
+                                    "error",
+                                    e.getMessage()
+                            )
+                    );
         }
-    }
-
-    // --- MÉTODO DE PRUEBA RÁPIDA (Opcional) ---
-    @PostMapping("/checkout")
-    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
-    public ResponseEntity<?> procesarPago(@RequestBody OrdenDto orden) {
-        
-        Producto producto = productoRepository.findById(orden.getIdProducto())
-            .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-
-        if (producto.getStockActual() < orden.getCantidad()) {
-            return ResponseEntity.badRequest().body("Stock insuficiente para el producto: " + producto.getNombre());
-        }
-
-        int nuevoStock = producto.getStockActual() - orden.getCantidad();
-        producto.setStockActual(nuevoStock);
-        productoRepository.save(producto);
-
-        return ResponseEntity.ok("Pago procesado y stock actualizado correctamente");
     }
 }

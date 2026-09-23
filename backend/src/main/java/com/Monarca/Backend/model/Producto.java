@@ -1,48 +1,85 @@
 package com.Monarca.Backend.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "productos")
+@Table(name = "productos", schema = "monarca")
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class Producto {
-@Column(name = "nombre", nullable = false, length = 150)
-    private String nombre;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_producto")
-    private Integer idProducto;
+    private Long idProducto;
 
-    // Relación con Familia de Productos
-    @ManyToOne
-    @JoinColumn(name = "id_familia", nullable = false)
-    private FamiliaProducto familiaProducto;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_categoria", nullable = false)
+    private Categoria categoria;
 
-    @Column(name = "talla", nullable = false, length = 10)
-    private String talla;
+    @Column(name = "nombre", nullable = false, length = 150)
+    private String nombre;
 
-    @Column(name = "color", nullable = false, length = 50)
-    private String color;
+    @Column(name = "slug", nullable = false, unique = true, length = 180)
+    private String slug;
 
-    @Column(name = "sku", nullable = false, unique = true, length = 50)
-    private String sku;
+    @Column(name = "descripcion", columnDefinition = "TEXT")
+    private String descripcion;
+
+    @Column(name = "marca", length = 100)
+    private String marca = "Monarca";
 
     @Column(name = "precio_base", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioBase;
 
-    @Column(name = "stock_actual", nullable = false)
-    private Integer stockActual = 0; // Por defecto inicia en 0 hasta que hagamos una Orden de Compra
-
     @Column(name = "activo", nullable = false)
     private Boolean activo = true;
-    @Column(length = 1000)
-    private String descripcion;
 
-    private String imagen;
+    @Column(name = "destacado", nullable = false)
+    private Boolean destacado = false;
+
+    @Column(name = "fecha_creacion", nullable = false)
+    private OffsetDateTime fechaCreacion;
+
+    @Column(name = "fecha_actualizacion", nullable = false)
+    private OffsetDateTime fechaActualizacion;
+
+    @PrePersist
+    public void prePersist() {
+        OffsetDateTime ahora = OffsetDateTime.now();
+
+        if (fechaCreacion == null) {
+            fechaCreacion = ahora;
+        }
+
+        if (fechaActualizacion == null) {
+            fechaActualizacion = ahora;
+        }
+
+        if (activo == null) {
+            activo = true;
+        }
+
+        if (destacado == null) {
+            destacado = false;
+        }
+
+        if (marca == null || marca.isBlank()) {
+            marca = "Monarca";
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        fechaActualizacion = OffsetDateTime.now();
+    }
 }

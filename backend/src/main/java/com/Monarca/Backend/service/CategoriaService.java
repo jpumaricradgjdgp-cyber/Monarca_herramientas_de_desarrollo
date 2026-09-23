@@ -2,6 +2,7 @@ package com.Monarca.Backend.service;
 
 import com.Monarca.Backend.model.Categoria;
 import com.Monarca.Backend.repository.CategoriaRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -11,27 +12,69 @@ import java.util.Optional;
 @Service
 public class CategoriaService {
 
-    // Aquí inyectamos a nuestro "bibliotecario" (El DAO)
     @Autowired
     private CategoriaRepository categoriaRepository;
 
-    // Método para obtener TODAS las categorías
+
     public List<Categoria> listarTodas() {
         return categoriaRepository.findAll();
     }
 
-    // Método para guardar una NUEVA categoría
+
+    public Optional<Categoria> buscarPorId(Long id) {
+        return categoriaRepository.findById(id);
+    }
+
+
     public Categoria guardar(Categoria categoria) {
         return categoriaRepository.save(categoria);
     }
 
-    // Método para buscar una categoría por su ID
-    public Optional<Categoria> buscarPorId(Integer id) {
-        return categoriaRepository.findById(id);
+
+    public Categoria actualizar(Long id, Categoria datos) {
+
+        Categoria categoria = categoriaRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Categoría no encontrada"
+                        )
+                );
+
+        if (datos.getNombre() != null) {
+            categoria.setNombre(datos.getNombre());
+        }
+
+        if (datos.getSlug() != null) {
+            categoria.setSlug(datos.getSlug());
+        }
+
+        if (datos.getDescripcion() != null) {
+            categoria.setDescripcion(
+                    datos.getDescripcion()
+            );
+        }
+
+        if (datos.getActivo() != null) {
+            categoria.setActivo(
+                    datos.getActivo()
+            );
+        }
+
+        return categoriaRepository.save(
+                categoria
+        );
     }
 
-    // Método para eliminar una categoría
-    public void eliminar(Integer id) {
+
+    public void eliminar(Long id) {
+
+        if (!categoriaRepository.existsById(id)) {
+            throw new RuntimeException(
+                    "Categoría no encontrada"
+            );
+        }
+
         categoriaRepository.deleteById(id);
     }
 }

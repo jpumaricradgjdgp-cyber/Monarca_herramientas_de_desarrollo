@@ -20,9 +20,12 @@ import java.util.List;
 
     // Listar todos (Público)
     @GetMapping
-    public List<Producto> listarTodos() {
-        return productoService.listarTodos();
-    }
+public ResponseEntity<?> listarTodos() {
+
+    return ResponseEntity.ok(
+            productoService.listarCatalogo()
+    );
+}
 
     // Guardar nuevo producto (Solo Admin)
     @PostMapping

@@ -1,81 +1,132 @@
 package com.Monarca.Backend.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import java.time.LocalDateTime; 
-// import java.util.List; <-- Ya no necesitamos esto por ahora
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "pedidos")
+@Table(name = "pedidos", schema = "monarca")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Pedido {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_pedido")
-    private Integer idPedido;
+    private Long idPedido;
 
-    @Column(name = "fecha_pedido")
-    private LocalDateTime fechaPedido;
+    @Column(
+            name = "codigo_pedido",
+            length = 40,
+            unique = true
+    )
+    private String codigoPedido;
 
-    private Double total;
-
-    @Transient // <-- Esto le dice a Hibernate: "No busques esta columna en la BD"
-    private String estado;
-    
-    // Relación: Un pedido pertenece a un solo usuario
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_usuario")
-    @JsonIgnoreProperties({"pedidos", "password", "authorities", "hibernateLazyInitializer", "handler"}) 
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(
+            name = "id_usuario",
+            nullable = false
+    )
     private Usuario usuario;
 
-    // ========================================================
-    // 🚨 AQUÍ ESTABA EL ERROR: ESTO DEBE ESTAR COMENTADO 🚨
-    // ========================================================
-    // @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // @JsonIgnoreProperties({"pedido"}) 
-    // private List<DetallePedido> detalles;
-    // ========================================================
+    @Column(
+            name = "estado",
+            nullable = false,
+            length = 30
+    )
+    private String estado = "PENDIENTE_PAGO";
 
-    @ManyToOne
-    @JoinColumn(name = "id_metodo_pago")
-    private MetodoPago metodoPago;
+    @Column(
+            name = "subtotal",
+            nullable = false,
+            precision = 10,
+            scale = 2
+    )
+    private BigDecimal subtotal;
 
-    @ManyToOne
-    @JoinColumn(name = "id_estatus_envio")
-    private EstatusEnvio estatusEnvio;
+    @Column(
+            name = "descuento",
+            nullable = false,
+            precision = 10,
+            scale = 2
+    )
+    private BigDecimal descuento =
+            BigDecimal.ZERO;
 
-    // --- Constructor ---
-    public Pedido() {
-        this.fechaPedido = LocalDateTime.now(); 
-        this.estado = "PENDIENTE";
+    @Column(
+            name = "costo_envio",
+            nullable = false,
+            precision = 10,
+            scale = 2
+    )
+    private BigDecimal costoEnvio =
+            BigDecimal.ZERO;
+
+    @Column(
+            name = "total",
+            nullable = false,
+            precision = 10,
+            scale = 2
+    )
+    private BigDecimal total;
+
+    @Column(
+            name = "observacion",
+            length = 500
+    )
+    private String observacion;
+
+    @Column(
+            name = "fecha_pedido",
+            nullable = false
+    )
+    private OffsetDateTime fechaPedido;
+
+    @Column(
+            name = "fecha_actualizacion",
+            nullable = false
+    )
+    private OffsetDateTime fechaActualizacion;
+
+
+    @PrePersist
+    public void prePersist() {
+
+        OffsetDateTime ahora =
+                OffsetDateTime.now();
+
+        if (estado == null) {
+            estado = "PENDIENTE_PAGO";
+        }
+
+        if (descuento == null) {
+            descuento = BigDecimal.ZERO;
+        }
+
+        if (costoEnvio == null) {
+            costoEnvio = BigDecimal.ZERO;
+        }
+
+        if (fechaPedido == null) {
+            fechaPedido = ahora;
+        }
+
+        if (fechaActualizacion == null) {
+            fechaActualizacion = ahora;
+        }
     }
 
-    // --- Getters y Setters ---
-    public Integer getIdPedido() { return idPedido; }
-    public void setIdPedido(Integer idPedido) { this.idPedido = idPedido; }
 
-    public LocalDateTime getFechaPedido() { return fechaPedido; }
-    public void setFechaPedido(LocalDateTime fechaPedido) { this.fechaPedido = fechaPedido; }
-
-    public Double getTotal() { return total; }
-    public void setTotal(Double total) { this.total = total; }
-
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
-
-    public Usuario getUsuario() { return usuario; }
-    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
-
-    public MetodoPago getMetodoPago() { return metodoPago; }
-    public void setMetodoPago(MetodoPago metodoPago) { this.metodoPago = metodoPago; }
-
-    public EstatusEnvio getEstatusEnvio() { return estatusEnvio; }
-    public void setEstatusEnvio(EstatusEnvio estatusEnvio) { this.estatusEnvio = estatusEnvio; }
-
-    // ========================================================
-    // 🚨 TAMBIÉN COMENTAMOS EL GETTER DE DETALLES 🚨
-    // ========================================================
-    // public List<DetallePedido> getDetalles() { return detalles; }
-    // public void setDetalles(List<DetallePedido> detalles) { ... }
-    // ========================================================
+    @PreUpdate
+    public void preUpdate() {
+        fechaActualizacion =
+                OffsetDateTime.now();
+    }
 }

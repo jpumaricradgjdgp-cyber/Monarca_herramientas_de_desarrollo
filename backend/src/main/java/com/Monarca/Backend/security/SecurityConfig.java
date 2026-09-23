@@ -14,56 +14,180 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    // 1. Declaración ÚNICA de variables
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AuthenticationProvider authenticationProvider;
 
-    // Inyección en el constructor
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, AuthenticationProvider authenticationProvider) {
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            AuthenticationProvider authenticationProvider
+    ) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.authenticationProvider = authenticationProvider;
     }
-@Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http
+    ) throws Exception {
+
         return http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) 
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/productos", "/api/productos/**").permitAll()
-                
-                // 🚨 NUEVAS REGLAS SEPARADAS PARA PEDIDOS 🚨
-                // 1. Cualquier usuario que haya iniciado sesión (authenticated) puede comprar
-                .requestMatchers(HttpMethod.POST, "/api/pedidos/procesar").authenticated() 
-                
-                // 2. SOLO el Administrador puede hacer peticiones GET para ver la tabla de ventas
-                .requestMatchers(HttpMethod.GET, "/api/pedidos", "/api/pedidos/**").hasAuthority("ROLE_ADMIN")
-                
-                .requestMatchers("/error").permitAll() 
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authenticationProvider(authenticationProvider) 
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .build();
+
+                // CORS
+                .cors(cors ->
+                        cors.configurationSource(
+                                corsConfigurationSource()
+                        )
+                )
+
+                // API REST + JWT -> sin CSRF
+                .csrf(csrf -> csrf.disable())
+
+                // Sesiones desactivadas
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
+                )
+
+                // Reglas de autorización
+                .authorizeHttpRequests(auth -> auth
+
+                        // Preflight CORS
+                        .requestMatchers(
+                                HttpMethod.OPTIONS,
+                                "/**"
+                        ).permitAll()
+
+                        // =====================================
+                        // AUTENTICACIÓN PÚBLICA
+                        // =====================================
+
+                        .requestMatchers(
+                                "/api/auth/**"
+                        ).permitAll()
+
+                        // =====================================
+                        // CATÁLOGO PÚBLICO
+                        // =====================================
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/productos",
+                                "/api/productos/**"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/categorias",
+                                "/api/categorias/**"
+                        ).permitAll()
+
+                        // =====================================
+                        // ADMINISTRACIÓN DE PRODUCTOS
+                        // =====================================
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/productos",
+                                "/api/productos/**"
+                        ).hasAuthority("ROLE_ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/productos",
+                                "/api/productos/**"
+                        ).hasAuthority("ROLE_ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/productos",
+                                "/api/productos/**"
+                        ).hasAuthority("ROLE_ADMIN")
+
+                        // =====================================
+                        // PEDIDOS
+                        // =====================================
+
+                        // Cliente o administrador autenticado
+                        // puede realizar una compra
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/pedidos/procesar"
+                        ).authenticated()
+
+                        // Solo administrador ve todos los pedidos
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/pedidos",
+                                "/api/pedidos/**"
+                        ).hasAuthority("ROLE_ADMIN")
+
+                        // =====================================
+                        // ERRORES
+                        // =====================================
+
+                        .requestMatchers(
+                                "/error"
+                        ).permitAll()
+
+                        // Todo lo demás requiere login
+                        .anyRequest()
+                        .authenticated()
+                )
+
+                // Provider de usuario + BCrypt
+                .authenticationProvider(
+                        authenticationProvider
+                )
+
+                // JWT antes del filtro estándar
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
+
+                .build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+
+        CorsConfiguration configuration =
+                new CorsConfiguration();
+
+        configuration.setAllowedOrigins(
+                List.of("*")
+        );
+
+        configuration.setAllowedMethods(
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "OPTIONS"
+                )
+        );
+
+        configuration.setAllowedHeaders(
+                List.of("*")
+        );
+
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration(
+                "/**",
+                configuration
+        );
+
         return source;
     }
-} // 2. La clase se cierra correctamente al final
+}

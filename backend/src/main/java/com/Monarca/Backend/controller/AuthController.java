@@ -7,23 +7,24 @@ import com.Monarca.Backend.model.Usuario;
 import com.Monarca.Backend.repository.RolRepository;
 import com.Monarca.Backend.repository.UsuarioRepository;
 import com.Monarca.Backend.security.JwtUtil;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime; // <-- SOLUCIÓN 1: Importamos LocalDateTime
 import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*") // Permite la conexión con tu HTML/JS
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     @Autowired
@@ -39,63 +40,152 @@ public class AuthController {
     private RolRepository rolRepository;
 
     @Autowired
-    private JwtUtil jwtUtil; // <-- SOLUCIÓN 2: Inyectamos el JwtUtil
+    private JwtUtil jwtUtil;
+
+
+    // =========================================================
+    // REGISTRO DE CLIENTE
+    // =========================================================
 
     @PostMapping("/registro")
     public ResponseEntity<?> registrarCliente(@RequestBody RegistroDto dto) {
-        // 1. Verificar si el correo ya existe
-        if (usuarioRepository.findByEmail(dto.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("El correo ya está registrado");
+
+        // 1. Normalizar el correo
+        String correo = dto.getEmail().trim().toLowerCase();
+
+        // 2. Verificar si el correo ya está registrado
+        if (usuarioRepository.findByCorreoIgnoreCase(correo).isPresent()) {
+
+            return ResponseEntity
+                    .badRequest()
+                    .body("El correo ya está registrado");
         }
 
-        // 2. Crear el nuevo usuario
-        Usuario nuevoUsuario = new Usuario();
-        nuevoUsuario.setNombre(dto.getNombre());
-        nuevoUsuario.setApellido(dto.getApellido());
-        nuevoUsuario.setEmail(dto.getEmail());
-        
-        // 3. Encriptar la contraseña antes de guardarla
-        nuevoUsuario.setPassword(passwordEncoder.encode(dto.getPassword()));
-        
-        // Cambiamos LocalDate por LocalDateTime para que coincida con tu Entidad
-        nuevoUsuario.setFechaRegistro(LocalDateTime.now());
+        // 3. Buscar el rol CLIENTE en la nueva BD
+        Rol rolCliente = rolRepository
+                .findByNombre("CLIENTE")
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "No existe el rol CLIENTE en la base de datos"
+                        )
+                );
 
-        // 4. Asignar el Rol de Cliente (Ejemplo: id_rol = 2)
-        Rol rolCliente = rolRepository.findById(2)
-            .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
+        // 4. Crear usuario
+        Usuario nuevoUsuario = new Usuario();
+
+        nuevoUsuario.setNombres(dto.getNombre());
+        nuevoUsuario.setApellidos(dto.getApellido());
+        nuevoUsuario.setCorreo(correo);
+
+        // 5. Encriptar contraseña con BCrypt
+        nuevoUsuario.setPassword(
+                passwordEncoder.encode(dto.getPassword())
+        );
+
+        // 6. Asignar rol
         nuevoUsuario.setRol(rolCliente);
 
-        // 5. Guardar en MySQL
+        // 7. Usuario activo
+        nuevoUsuario.setActivo(true);
+
+        // fechaCreacion y fechaActualizacion
+        // son generadas automáticamente por @PrePersist
+        // dentro de Usuario.java
+
+        // 8. Guardar en PostgreSQL / Supabase
         usuarioRepository.save(nuevoUsuario);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body("Cuenta creada con éxito");
+        Map<String, String> response = new HashMap<>();
+
+        response.put(
+                "mensaje",
+                "Cuenta creada con éxito"
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
+
+    // =========================================================
+    // LOGIN
+    // =========================================================
+
     @PostMapping("/login")
-    public ResponseEntity<?> loginUsuario(@RequestBody LoginDto loginDto) {
+    public ResponseEntity<?> loginUsuario(
+            @RequestBody LoginDto loginDto
+    ) {
+
         try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
+
+            String correo = loginDto
+                    .getEmail()
+                    .trim()
+                    .toLowerCase();
+
+            // 1. Autenticar correo + contraseña
+            Authentication authentication =
+                    authenticationManager.authenticate(
+
+                            new UsernamePasswordAuthenticationToken(
+                                    correo,
+                                    loginDto.getPassword()
+                            )
+                    );
+
+
+            // 2. Obtener usuario autenticado
+            UserDetails userDetails =
+                    (UserDetails) authentication.getPrincipal();
+
+
+            // 3. Generar JWT
+            String jwt =
+                    jwtUtil.generateToken(userDetails);
+
+
+            // 4. Obtener rol
+            String rol = userDetails
+                    .getAuthorities()
+                    .iterator()
+                    .next()
+                    .getAuthority();
+
+
+            // 5. Crear respuesta
+            Map<String, String> response =
+                    new HashMap<>();
+
+            response.put("token", jwt);
+
+            response.put(
+                    "email",
+                    userDetails.getUsername()
             );
-// ... dentro de tu método loginUsuario ...
-UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-String jwt = jwtUtil.generateToken(userDetails);
 
-// Extraemos el rol principal del usuario (ej: ROLE_ADMIN o ROLE_USER)
-String rol = userDetails.getAuthorities().iterator().next().getAuthority();
+            response.put(
+                    "rol",
+                    rol
+            );
 
-Map<String, String> response = new HashMap<>();
-response.put("token", jwt);
-response.put("email", userDetails.getUsername());
-response.put("rol", rol); // <-- ¡ESTA ES LA CLAVE!
 
-return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
-            System.out.println("🚨 ERROR REAL DE LOGIN: " + e.getMessage());
-            e.printStackTrace(); 
-            
-            return new ResponseEntity<>("Credenciales inválidas", HttpStatus.UNAUTHORIZED);
+
+        } catch (AuthenticationException e) {
+
+            Map<String, String> response =
+                    new HashMap<>();
+
+            response.put(
+                    "error",
+                    "Correo o contraseña incorrectos"
+            );
+
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(response);
         }
     }
 }

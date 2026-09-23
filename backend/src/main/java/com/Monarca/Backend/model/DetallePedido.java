@@ -1,58 +1,79 @@
 package com.Monarca.Backend.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.math.BigDecimal;
 
 @Entity
-@Table(name = "detalle_pedidos")
+@Table(
+        name = "detalles_pedido",
+        schema = "monarca"
+)
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class DetallePedido {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_detalle")
-    private Integer idDetalle;
+    private Long idDetalle;
 
-    private Integer cantidad;
-    
-    @Column(name = "precio_unitario")
-    private Double precioUnitario;
-
-    // Relación: Muchos detalles pertenecen a un pedido
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_pedido")
-    @JsonIgnore // Fundamental para que el JSON no entre en un bucle infinito
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "id_pedido",
+            nullable = false
+    )
     private Pedido pedido;
 
-    // Relación: Un detalle pertenece a un producto específico (ropa)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_producto")
-    private Producto producto;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "id_variante",
+            nullable = false
+    )
+    private VarianteProducto variante;
 
-    // --- Constructor vacío ---
-    public DetallePedido() {
-    }
+    @Column(name = "cantidad", nullable = false)
+    private Integer cantidad;
 
-    // --- Getters y Setters ---
-    public Integer getIdDetalle() { return idDetalle; }
-    public void setIdDetalle(Integer idDetalle) { this.idDetalle = idDetalle; }
+    @Column(
+            name = "precio_unitario",
+            nullable = false,
+            precision = 10,
+            scale = 2
+    )
+    private BigDecimal precioUnitario;
 
-    public Integer getCantidad() { return cantidad; }
-    public void setCantidad(Integer cantidad) { this.cantidad = cantidad; }
+    @Column(
+            name = "subtotal",
+            nullable = false,
+            precision = 10,
+            scale = 2
+    )
+    private BigDecimal subtotal;
 
-    public Double getPrecioUnitario() { return precioUnitario; }
-    public void setPrecioUnitario(Double precioUnitario) { this.precioUnitario = precioUnitario; }
+    @Column(
+            name = "nombre_producto",
+            nullable = false,
+            length = 150
+    )
+    private String nombreProducto;
 
-    public Pedido getPedido() { return pedido; }
-    public void setPedido(Pedido pedido) { this.pedido = pedido; }
+    @Column(
+            name = "sku",
+            nullable = false,
+            length = 80
+    )
+    private String sku;
 
-    public Producto getProducto() { return producto; }
-    public void setProducto(Producto producto) { this.producto = producto; }
-    
-    // Método auxiliar útil para calcular el subtotal por línea
-    public Double getSubtotal() {
-        if (precioUnitario != null && cantidad != null) {
-            return precioUnitario * cantidad;
-        }
-        return 0.0;
-    }
+    @Column(name = "talla", length = 20)
+    private String talla;
+
+    @Column(name = "color", length = 50)
+    private String color;
 }

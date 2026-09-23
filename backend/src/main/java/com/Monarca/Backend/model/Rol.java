@@ -1,24 +1,30 @@
 package com.Monarca.Backend.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Table(name = "roles")
+@Table(name = "roles", schema = "monarca")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Rol {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_rol")
-    private Integer idRol;
+    private Long idRol;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(name = "nombre", nullable = false, unique = true, length = 30)
     private String nombre;
 
-    public Rol() {}
+    @Column(name = "descripcion", length = 150)
+    private String descripcion;
 
-    // Getters y Setters
-    public Integer getIdRol() { return idRol; }
-    public void setIdRol(Integer idRol) { this.idRol = idRol; }
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
+    @Column(name = "activo", nullable = false)
+    private Boolean activo = true;
 }
