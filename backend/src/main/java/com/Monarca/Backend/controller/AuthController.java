@@ -50,6 +50,12 @@ public class AuthController {
     @PostMapping("/registro")
     public ResponseEntity<?> registrarCliente(@RequestBody RegistroDto dto) {
 
+        if (dto == null || dto.getNombre() == null || dto.getNombre().isBlank() || dto.getNombre().trim().length() > 100
+                || dto.getApellido() == null || dto.getApellido().isBlank() || dto.getApellido().trim().length() > 100
+                || !com.Monarca.Backend.service.PasswordRecoveryService.emailValido(dto.getEmail())
+                || !com.Monarca.Backend.service.PasswordRecoveryService.passwordValido(dto.getPassword())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Completa los nombres, apellidos y correo; la contraseña debe tener entre 8 caracteres y 72 bytes."));
+        }
         // 1. Normalizar el correo
         String correo = dto.getEmail().trim().toLowerCase();
 
@@ -73,8 +79,8 @@ public class AuthController {
         // 4. Crear usuario
         Usuario nuevoUsuario = new Usuario();
 
-        nuevoUsuario.setNombres(dto.getNombre());
-        nuevoUsuario.setApellidos(dto.getApellido());
+        nuevoUsuario.setNombres(dto.getNombre().trim());
+        nuevoUsuario.setApellidos(dto.getApellido().trim());
         nuevoUsuario.setCorreo(correo);
 
         // 5. Encriptar contraseña con BCrypt

@@ -15,6 +15,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final UsuarioRepository usuarioRepository;
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     @Override
     public UserDetails loadUserByUsername(String correo)
             throws UsernameNotFoundException {

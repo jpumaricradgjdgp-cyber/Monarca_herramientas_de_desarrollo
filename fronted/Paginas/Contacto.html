@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../css/styles.css"> 
     
     <link rel="stylesheet" href="../css/contacto.css">
+<script src="../js/tienda.js"></script>
 </head>
 <body>
 
@@ -254,91 +255,7 @@
             setInterval(cambiarSlide, 4000);
         });
     </script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    
-    // 1. ACTUALIZAR PRECIOS DESDE EL ADMIN
-    const baseDeDatos = JSON.parse(localStorage.getItem('monarca_database')) || {};
-    const tarjetas = document.querySelectorAll('.producto-card');
 
-    tarjetas.forEach(tarjeta => {
-        // Extraemos el ID del enlace (ej: "crop-ana" de "producto.html?id=crop-ana")
-        const href = tarjeta.getAttribute("href");
-        const idProducto = href.split("id=")[1];
-
-        // Si el producto existe en la base de datos del Admin, actualizamos la vista
-        if (baseDeDatos[idProducto]) {
-            const prod = baseDeDatos[idProducto];
-            tarjeta.querySelector("h3").textContent = prod.titulo;
-            tarjeta.querySelector(".precio-actual").textContent = prod.precio;
-            tarjeta.querySelector("img").src = prod.imagen;
-        }
-
-        // 2. LÓGICA DE TALLAS DIRECTO EN LA TARJETA
-        const botonesTalla = tarjeta.querySelectorAll(".talla-btn");
-        let tallaSeleccionadaEnTarjeta = null;
-
-        botonesTalla.forEach(btn => {
-            btn.addEventListener("click", (e) => {
-                e.preventDefault(); // Evita que la tarjeta te lleve a otra página
-                
-                // Limpiar colores de las tallas en ESTA tarjeta
-                botonesTalla.forEach(b => {
-                    b.style.backgroundColor = "transparent";
-                    b.style.color = "#000";
-                });
-
-                // Pintar la talla seleccionada
-                btn.style.backgroundColor = "#1a1a1a";
-                btn.style.color = "#fff";
-                tallaSeleccionadaEnTarjeta = btn.textContent;
-            });
-        });
-
-        // 3. LÓGICA DEL BOTÓN "AGREGAR AL CARRITO"
-        const btnAgregar = tarjeta.querySelector(".btn-agregar");
-        if (btnAgregar) {
-            btnAgregar.addEventListener("click", (e) => {
-                e.preventDefault(); // Evita que la tarjeta te lleve a otra página
-
-                if (!tallaSeleccionadaEnTarjeta) {
-                    alert("Por favor, selecciona una talla primero.");
-                    return;
-                }
-
-                // Obtener detalles para el carrito
-                const titulo = tarjeta.querySelector("h3").textContent;
-                const imagen = tarjeta.querySelector("img").src;
-                const precioTexto = tarjeta.querySelector(".precio-actual").textContent;
-                const precioNumero = parseFloat(precioTexto.replace("S/ ", ""));
-
-                const nuevoItem = {
-                    id: idProducto,
-                    titulo: titulo,
-                    imagen: imagen,
-                    talla: tallaSeleccionadaEnTarjeta,
-                    precio: precioNumero,
-                    cantidad: 1
-                };
-
-                // Usamos la variable global de carrito.js
-                const itemExistente = window.carritoGlobal.find(item => item.id === nuevoItem.id && item.talla === nuevoItem.talla);
-
-                if (itemExistente) {
-                    itemExistente.cantidad += 1;
-                } else {
-                    window.carritoGlobal.push(nuevoItem);
-                }
-
-                // Ejecutamos las funciones globales de carrito.js
-                window.guardarCarritoGlobal();
-                window.actualizarUIGlobal();
-                window.abrirCarritoGlobal();
-            });
-        }
-    });
-});
-</script>
 <div id="carrito-overlay" class="carrito-overlay"></div>
     <div id="panel-carrito" class="panel-carrito">
         <div class="carrito-header">

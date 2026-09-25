@@ -43,6 +43,7 @@
         .modal input, .modal select { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .btn-save { background: #1a1a1a; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; cursor: pointer; }
     </style>
+<script src="../js/tienda.js"></script>
 </head>
 <body>
 
@@ -129,6 +130,7 @@
             <h3 id="modal-titulo">Nuevo Producto</h3>
             <form id="form-producto">
                 <input type="hidden" id="prod-id">
+                <select id="prod-variante" aria-label="Variante a editar" hidden></select>
                 <input type="text" id="prod-nombre" placeholder="Nombre de la Prenda" required>
                 <select id="prod-categoria" required>
                     <option value="Tops">Tops</option>
@@ -136,10 +138,12 @@
                     <option value="Calzado">Calzado</option>
                     <option value="Accesorios">Accesorios</option>
                 </select>
-                <input type="text" id="prod-talla" placeholder="Tallas (ej. S - M - L)" required>
-                <input type="number" id="prod-precio" step="0.01" placeholder="Precio (S/)" required>
-                <input type="number" id="prod-stock" placeholder="Stock disponible" required>
-                <input type="text" id="prod-img" placeholder="URL de la imagen (ej. ../img/foto.jpg)" required>
+                <input type="text" id="prod-talla" placeholder="Talla de esta variante (ej. S)" required>
+                <input type="text" id="prod-color" placeholder="Color de esta variante" required>
+                <input type="number" id="prod-precio-base" min="0" step="0.01" placeholder="Precio base (S/)" required>
+                <input type="number" min="0" id="prod-precio" step="0.01" placeholder="Precio de la variante (S/)" required>
+                <input type="number" id="prod-stock" min="0" step="1" placeholder="Stock disponible" required>
+                <input type="url" pattern="https://.*" id="prod-img" placeholder="URL HTTPS de Supabase Storage" required>
                 
                 <button type="submit" class="btn-save">Guardar Producto</button>
                 <button type="button" style="width: 100%; padding: 10px; margin-top: 10px; border: none; cursor:pointer;" onclick="cerrarModal()">Cancelar</button>
@@ -175,7 +179,8 @@
 
                 document.getElementById('admin-logout').addEventListener('click', (e) => {
                     e.preventDefault();
-                    localStorage.clear();
+                    localStorage.removeItem('token_monarca');
+                    localStorage.removeItem('rol_monarca');
                     window.location.href = "../index.html";
                 });
             } catch (error) {
@@ -196,19 +201,14 @@
         tablaBody.innerHTML = '';
 
         datos.forEach((prod) => {
-            let imagenUrl = "../img/mariposa.png";
-            if (prod.imagen && isNaN(prod.imagen) && !prod.imagen.includes('via.placeholder.com')) {
-                imagenUrl = prod.imagen;
-            }
-
             const fila = document.createElement('tr');
             fila.innerHTML = `
-                <td><img src="${imagenUrl}" alt="${prod.nombre}" style="width:50px; height:60px; object-fit: cover;"></td>
-                <td>${prod.nombre}</td>
-                <td>${prod.familiaProducto ? prod.familiaProducto.nombre : 'N/A'}</td>
-                <td>${prod.talla}</td>
+                <td>${imagenProductoHTML(prod)}</td>
+                <td>${escaparHTML(prod.nombre)}</td>
+                <td>${escaparHTML(prod.categoria)}</td>
+                <td>${(prod.variantes || []).map(v => escaparHTML(`${v.talla} / ${v.color}`)).join(", ")}</td>
                 <td>${prod.precioBase ? parseFloat(prod.precioBase).toFixed(2) : '0.00'}</td>
-                <td>${prod.stockActual}</td>
+                <td>${(prod.variantes || []).reduce((suma, v) => suma + v.stock, 0)}</td>
                 <td>
                     <button class="btn-accion" onclick="editarProducto(${prod.idProducto})">Editar</button>
                     <button class="btn-accion" onclick="eliminarProducto(${prod.idProducto})">Eliminar</button>
@@ -254,6 +254,8 @@
     function abrirModal() {
         if (!form) return;
         form.reset();
+        document.getElementById('prod-variante').hidden = true;
+        document.getElementById('prod-variante').replaceChildren();
         document.getElementById('prod-id').value = '';
         document.getElementById('modal-titulo').innerText = 'Nuevo Producto';
         modal.style.display = 'flex';
@@ -268,14 +270,22 @@
         const prod = inventario.find(p => p.idProducto === id);
         document.getElementById('prod-id').value = prod.idProducto;
         document.getElementById('prod-nombre').value = prod.nombre;
-        document.getElementById('prod-talla').value = prod.talla;
-        document.getElementById('prod-precio').value = prod.precioBase;
-        document.getElementById('prod-stock').value = prod.stockActual;
-        document.getElementById('prod-img').value = prod.imagen;
-
-        if (prod.familiaProducto) {
-            document.getElementById('prod-categoria').value = prod.familiaProducto.nombre;
-        }
+        document.getElementById('prod-precio-base').value = prod.precioBase;
+        document.getElementById('prod-img').value = prod.imagen || '';
+        document.getElementById('prod-categoria').value = prod.categoria;
+        const selector = document.getElementById('prod-variante');
+        selector.hidden = false;
+        selector.innerHTML = (prod.variantes || []).map(v =>
+            '<option value="' + v.idVariante + '">' + escaparHTML(v.sku + ' · ' + v.talla + ' / ' + v.color) + '</option>').join('');
+        const elegir = () => {
+            const variante = prod.variantes.find(v => v.idVariante === Number(selector.value));
+            document.getElementById('prod-talla').value = variante?.talla || '';
+            document.getElementById('prod-color').value = variante?.color || '';
+            document.getElementById('prod-precio').value = variante?.precio ?? prod.precioBase;
+            document.getElementById('prod-stock').value = variante?.stock ?? 0;
+        };
+        selector.onchange = elegir;
+        elegir();
 
         document.getElementById('modal-titulo').innerText = 'Editar Producto';
         modal.style.display = 'flex';
@@ -287,6 +297,9 @@
             e.preventDefault();
 
             const producto = {
+                idVariante: Number(document.getElementById('prod-variante').value) || null,
+                precioBase: Number(document.getElementById('prod-precio-base').value),
+                color: document.getElementById('prod-color').value,
                 nombre: document.getElementById('prod-nombre').value,
                 categoria: document.getElementById('prod-categoria').value,
                 talla: document.getElementById('prod-talla').value,
@@ -314,7 +327,7 @@
                     cerrarModal();
                     cargarProductos();
                 } else {
-                    alert("Error al guardar el producto");
+                    alert("Error al guardar el producto: " + await respuesta.text());
                 }
             } catch (error) {
                 console.error("Error al guardar:", error);
@@ -421,7 +434,7 @@
                     // Si el backend no envía fechaPedido, ponemos "Hoy"
                     const fecha = venta.fechaPedido ? new Date(venta.fechaPedido).toLocaleDateString() : 'Hoy';
                     // Si hay usuario asociado, usamos su nombre, sino "Cliente"
-                    const clienteInfo = venta.usuario ? (venta.usuario.nombre || venta.usuario.email) : "Cliente";
+                    const clienteInfo = escaparHTML(venta.cliente || "Cliente");
 
                     tbody.innerHTML += `
                         <tr style="border-bottom: 1px solid #eee;">
@@ -429,7 +442,7 @@
                             <td style="padding: 12px;">${fecha}</td>
                             <td style="padding: 12px;">${clienteInfo}</td>
                             <td style="padding: 12px; font-weight:bold; color:#2ecc71;">S/ ${(venta.total || 0).toFixed(2)}</td>
-                            <td style="padding: 12px;"><span style="background:#2ecc71; color:#fff; padding:4px 10px; border-radius:12px; font-size:12px;">Completado</span></td>
+                            <td style="padding: 12px;"><span style="background:#2ecc71; color:#fff; padding:4px 10px; border-radius:12px; font-size:12px;">${escaparHTML(venta.estado)}</span></td>
                         </tr>
                     `;
                 });
@@ -441,11 +454,19 @@
     }
 
     // ==========================================
+    async function cargarCategorias() {
+        try {
+            const categorias = await obtenerTienda('/categorias');
+            document.getElementById('prod-categoria').innerHTML = categorias.filter(c => c.activo)
+                .map(c => '<option value="' + escaparHTML(c.nombre) + '">' + escaparHTML(c.nombre) + '</option>').join('');
+        } catch (error) { alert(error.message); }
+    }
     // 4. INICIALIZADOR GLOBAL
     // ==========================================
     document.addEventListener('DOMContentLoaded', () => {
         // Ejecutamos ambas funciones; si la tabla no existe en el HTML actual,
         // los if(!tbody) internos evitarán errores.
+        cargarCategorias();
         cargarProductos();
         cargarVentas(); 
     });

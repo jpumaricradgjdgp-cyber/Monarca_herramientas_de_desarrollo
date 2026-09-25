@@ -17,6 +17,8 @@ public class PedidoRequestDto {
     private BigDecimal total;
 
     private Long idMetodoPago;
+    // Datos de entrega conservados en la observación existente del pedido.
+    private String observacion;
 
     // Puede utilizarse después para RECOJO_TIENDA
     private Long idTiendaRetiro;

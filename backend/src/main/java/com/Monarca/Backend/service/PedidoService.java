@@ -107,8 +107,13 @@ public class PedidoService {
                 new ArrayList<>();
 
 
-        for (ItemCarritoDto item
-                : pedidoDto.getItems()) {
+        for (ItemCarritoDto item : pedidoDto.getItems()) {
+            if (item == null || item.getIdVariante() == null || item.getIdVariante() <= 0)
+                throw new IllegalArgumentException("El item debe contener idVariante válido");
+        }
+        List<ItemCarritoDto> itemsOrdenados = pedidoDto.getItems().stream()
+                .sorted(java.util.Comparator.comparing(ItemCarritoDto::getIdVariante)).toList();
+        for (ItemCarritoDto item : itemsOrdenados) {
 
             if (item.getCantidad() == null
                     || item.getCantidad() <= 0) {
@@ -125,7 +130,7 @@ public class PedidoService {
 
             if (!Boolean.TRUE.equals(
                     variante.getActivo()
-            )) {
+            ) || !Boolean.TRUE.equals(variante.getProducto().getActivo())) {
 
                 throw new RuntimeException(
                         "La variante "
@@ -196,6 +201,7 @@ public class PedidoService {
         Pedido pedido = new Pedido();
 
         pedido.setUsuario(usuario);
+        pedido.setObservacion(pedidoDto.getObservacion());
 
         pedido.setCodigoPedido(
                 generarCodigoPedido()
@@ -310,75 +316,10 @@ public class PedidoService {
     }
 
 
-    private VarianteProducto obtenerVariante(
-            ItemCarritoDto item
-    ) {
-
-        // Sistema nuevo
-        if (item.getIdVariante() != null) {
-
-            return varianteRepository
-                    .findByIdForUpdate(
-                            item.getIdVariante()
-                    )
-                    .orElseThrow(() ->
-                            new RuntimeException(
-                                    "Variante no encontrada: "
-                                            + item.getIdVariante()
-                            )
-                    );
-        }
-
-
-        // Compatibilidad con frontend antiguo
-        if (item.getIdProducto() != null) {
-
-            List<VarianteProducto> variantes =
-                    varianteRepository
-                            .findByProducto_IdProductoAndActivoTrue(
-                                    item.getIdProducto()
-                            );
-
-
-            if (variantes.isEmpty()) {
-
-                throw new RuntimeException(
-                        "El producto no tiene variantes disponibles: "
-                                + item.getIdProducto()
-                );
-            }
-
-
-            if (variantes.size() > 1) {
-
-                throw new RuntimeException(
-                        "El producto "
-                                + item.getIdProducto()
-                                + " tiene varias tallas o colores. "
-                                + "El frontend debe enviar idVariante."
-                );
-            }
-
-
-            return varianteRepository
-                    .findByIdForUpdate(
-                            variantes
-                                    .get(0)
-                                    .getIdVariante()
-                    )
-                    .orElseThrow(() ->
-                            new RuntimeException(
-                                    "Variante no encontrada"
-                            )
-                    );
-        }
-
-
-        throw new RuntimeException(
-                "El item debe contener idVariante"
-        );
+    private VarianteProducto obtenerVariante(ItemCarritoDto item) {
+        return varianteRepository.findByIdForUpdate(item.getIdVariante())
+                .orElseThrow(() -> new IllegalArgumentException("Variante no encontrada: " + item.getIdVariante()));
     }
-
 
     private void validarPedido(
             PedidoRequestDto dto
@@ -391,6 +332,9 @@ public class PedidoService {
         }
 
 
+        if (dto.getObservacion() != null && dto.getObservacion().length() > 500) {
+            throw new IllegalArgumentException("Los datos de entrega exceden 500 caracteres");
+        }
         if (dto.getIdUsuario() == null) {
 
             throw new RuntimeException(

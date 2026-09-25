@@ -145,3 +145,20 @@ body {
 .btn-blanco:hover {
     background-color: #f9f9f9;
 }
+/* Registro y ayuda de acceso: misma tarjeta y paleta del login. */
+[hidden] { display: none !important; }
+body { min-height: 100vh; height: auto; padding: 24px 16px; }
+.login-container { width: 100%; max-width: 420px; }
+.cabecera-login h1 { font-size: 22px; color: #111; margin-bottom: 8px; }
+.grupo-input > input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+.grupo-input > input:focus { outline: 2px solid #333; outline-offset: 2px; }
+.acciones-cuenta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px; margin-top: 22px; font-size: 14px; }
+.acciones-cuenta a { color: #333; text-underline-offset: 3px; }
+.mensaje-cuenta { padding: 12px; margin-bottom: 20px; background: #eef7ee; color: #235223; border-radius: 6px; font-size: 14px; line-height: 1.5; }
+.mensaje-cuenta.error { background: #fff1f1; color: #8b2323; }
+.ayuda { font-size: 12px; color: #666; margin-top: 8px; }
+.instrucciones { font-size: 14px; line-height: 1.6; margin-bottom: 18px; color: #444; }
+.enlace-boton { display: block; text-align: center; text-decoration: none; }
+.mostrar-clave { border: 0; background: transparent; padding: 6px; right: 6px; }
+.btn-negro:disabled { opacity: .6; cursor: wait; }
+@media (max-width: 480px) { .login-card { padding: 28px 20px; } }
