@@ -10,8 +10,6 @@ public class ItemCarritoDto {
     // Nuevo sistema
     private Long idVariante;
 
-    // Compatibilidad temporal con el frontend antiguo
-    private Long idProducto;
 
     private Integer cantidad;
 }

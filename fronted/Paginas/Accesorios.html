@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="icon" href="../img/mariposa.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+<script src="../js/tienda.js"></script>
 </head>
 <body>
    <header class="header">
@@ -170,7 +171,7 @@
         </aside>
 
         
-        <section class="grid-productos" id="contenedor-productos">
+        <section class="grid-productos" id="contenedor-productos" data-categoria="Accesorios" data-limite-precio="50">
             </section>
     </main>
 
@@ -224,154 +225,7 @@
             </div>
         </div>
     </footer>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-    
-    // 1. LÓGICA DEL ACORDEÓN 
-    const botonesFiltro = document.querySelectorAll(".filtro-item");
-    botonesFiltro.forEach(boton => {
-        boton.addEventListener("click", function() {
-            this.classList.toggle("abierto");
-            const opciones = this.nextElementSibling;
-            if(opciones) opciones.classList.toggle("activo");
-        });
-    });
-
-    // Variable global para que el botón sepa qué accesorio agregar
-    window.listaAccesoriosActivos = [];
-
-    // 2. CONEXIÓN A LA BASE DE DATOS (SPRING BOOT)
-    async function cargarProductosDesdeBD() {
-        try {
-            const respuesta = await fetch('http://localhost:8080/api/productos');
-            const productosBD = await respuesta.json();
-            
-            const contenedor = document.getElementById('contenedor-productos');
-            contenedor.innerHTML = ''; 
-
-            // ¡FILTRO MAESTRO! Solo agarramos los productos de la Familia Accesorios 
-            // NOTA: Si en tu base de datos "Accesorios" tiene otro ID (ej. 4), cámbialo aquí abajo:
-            const accesoriosBD = productosBD.filter(p => p.familiaProducto && p.familiaProducto.idFamilia === 4);
-
-            // Guardamos la lista temporalmente en el navegador
-            window.listaAccesoriosActivos = accesoriosBD;
-
-            accesoriosBD.forEach(producto => {
-                const categoriaPrecio = producto.precioBase < 50 ? 'bajo' : 'alto';
-                
-                // Separar tallas (los accesorios suelen ser talla Única, o medidas de anillos)
-                const tallaString = producto.talla ? producto.talla : "Única";
-                const tallasArray = tallaString.split(',');
-                let tallasHTML = '';
-                tallasArray.forEach(t => {
-                    tallasHTML += `<span class="talla-btn">${t.trim()}</span>`;
-                });
-                
-                const imagenSrc = producto.imagen ? producto.imagen : "../img/mariposa.png";
-
-                // Determinar tipo para el filtro de la barra lateral basándonos en el nombre/SKU
-                let tipoFiltro = "otro";
-                const skuLower = producto.sku.toLowerCase();
-                const nombreLower = producto.nombre ? producto.nombre.toLowerCase() : "";
-                
-                if(skuLower.includes("collar") || nombreLower.includes("collar")) tipoFiltro = "collar";
-                else if(skuLower.includes("anillo") || nombreLower.includes("anillo")) tipoFiltro = "anillo";
-                else if(skuLower.includes("pulsera") || nombreLower.includes("pulsera")) tipoFiltro = "pulsera";
-                else if(skuLower.includes("aretes") || nombreLower.includes("arete")) tipoFiltro = "aretes";
-
-                const tarjetaHTML = `
-                    <a href="producto.html?id=${producto.idProducto}" class="producto-card" data-tipo="${tipoFiltro}" data-color="${producto.color.toLowerCase()}" data-precio="${categoriaPrecio}">
-                        <div class="img-container">
-                            <img src="${imagenSrc}" alt="${producto.nombre || producto.sku}">
-                        </div>
-                        <div class="producto-info">
-                            <div class="producto-header">
-                                <div>
-                                    <span class="marca">Monarca mujer</span>
-                                    <h3>${producto.nombre || producto.sku}</h3>
-                                </div>
-                                <div class="precio-container">
-                                    <span class="precio-actual">S/ ${producto.precioBase.toFixed(2)}</span>
-                                </div>
-                            </div>
-                            <div class="producto-hover-info">
-                                <hr class="linea-divisora">
-                                <div class="tallas">${tallasHTML}</div>
-                                <button class="btn-agregar" onclick="event.preventDefault(); event.stopPropagation(); window.agregarDesdeCatalogo(${producto.idProducto});">AGREGAR AL CARRITO</button>
-                            </div>
-                        </div>
-                    </a>
-                `;
-                contenedor.innerHTML += tarjetaHTML;
-            });
-
-            // 3. ACTIVAR LOS FILTROS
-            inicializarFiltros();
-
-        } catch (error) {
-            console.error("Error conectando con Java:", error);
-            document.getElementById('contenedor-productos').innerHTML = '<p style="text-align:center; width:100%;">No hay conexión con el servidor.</p>';
-        }
-    }
-
-    // Función puente: Busca el producto y le asigna la primera talla
-    window.agregarDesdeCatalogo = function(idProducto) {
-        const productoSeleccionado = window.listaAccesoriosActivos.find(p => p.idProducto === idProducto);
-        if(productoSeleccionado) {
-            // Tomamos la primera talla que encuentre
-            const primeraTalla = productoSeleccionado.talla ? productoSeleccionado.talla.split(',')[0].trim() : "Única";
-            productoSeleccionado.tallaSeleccionada = primeraTalla;
-            
-            // Llamamos a la función global de carrito.js
-            if (typeof agregarAlCarrito === "function") {
-                agregarAlCarrito(productoSeleccionado);
-            } else {
-                console.error("No se encontró la función agregarAlCarrito. Asegúrate de incluir carrito.js");
-            }
-        }
-    };
-
-    // 4. LÓGICA DE FILTRADO
-    function inicializarFiltros() {
-        const checkboxes = document.querySelectorAll('.filtro-opciones input[type="checkbox"]');
-        const productos = document.querySelectorAll('.producto-card');
-        const buscador = document.getElementById('buscador-productos'); 
-
-        checkboxes.forEach(box => box.addEventListener('change', filtrarProductos));
-        if(buscador) buscador.addEventListener('input', filtrarProductos); 
-
-        function filtrarProductos() {
-            const tipos = Array.from(document.querySelectorAll('.filtro-grupo:nth-child(2) input:checked')).map(cb => cb.value); 
-            const colores = Array.from(document.querySelectorAll('.filtro-grupo:nth-child(3) input:checked')).map(cb => cb.value);
-            const precios = Array.from(document.querySelectorAll('.filtro-grupo:nth-child(5) input:checked')).map(cb => cb.value);
-            const textoBusqueda = buscador ? buscador.value.toLowerCase() : ""; 
-
-            productos.forEach(producto => {
-                const pTipo = producto.getAttribute('data-tipo');
-                const pColor = producto.getAttribute('data-color');
-                const pPrecio = producto.getAttribute('data-precio');
-                const pTitulo = producto.querySelector('h3').textContent.toLowerCase();
-
-                const coincideTipo = tipos.length === 0 || tipos.includes(pTipo);
-                const coincideColor = colores.length === 0 || colores.some(c => pColor.includes(c)); 
-                const coincidePrecio = precios.length === 0 || precios.includes(pPrecio);
-                const coincideBusqueda = pTitulo.includes(textoBusqueda);
-
-                if (coincideTipo && coincideColor && coincidePrecio && coincideBusqueda) {
-                    producto.style.display = 'block';
-                } else {
-                    producto.style.display = 'none';
-                }
-            });
-        }
-    }
-
-    // ¡A EJECUTAR!
-    cargarProductosDesdeBD();
-
-    });
-</script>
-  </script>
+<script src="../js/catalogo.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y" crossorigin="anonymous"></script>

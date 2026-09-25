@@ -9,6 +9,7 @@
     <link rel="icon" href="../img/mariposa.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     
+<script src="../js/tienda.js"></script>
 </head>
 <body>
    <header class="header">
@@ -158,7 +159,7 @@
             </div>
         </aside>
 
-<section class="grid-productos" id="contenedor-productos">            
+<section class="grid-productos" id="contenedor-productos" data-categoria="Tops" data-limite-precio="60">
     
         </section>
     </main>
@@ -214,135 +215,7 @@
         </div>
     </footer>
         
-    <script>
-document.addEventListener("DOMContentLoaded", function() {
-    
-    // 1. LÓGICA DEL ACORDEÓN 
-    const botonesFiltro = document.querySelectorAll(".filtro-item");
-    botonesFiltro.forEach(boton => {
-        boton.addEventListener("click", function() {
-            this.classList.toggle("abierto");
-            const opciones = this.nextElementSibling;
-            if(opciones) opciones.classList.toggle("activo");
-        });
-    });
-
-   // Variable global para que el botón sepa qué ropa agregar
-    window.listaTopsActivos = [];
-
-    // 2. CONEXIÓN A LA BASE DE DATOS (SPRING BOOT)
-    async function cargarProductosDesdeBD() {
-        try {
-            const respuesta = await fetch('http://localhost:8080/api/productos');
-            const productosBD = await respuesta.json();
-            
-            const contenedor = document.getElementById('contenedor-productos');
-            contenedor.innerHTML = ''; 
-            
-            const topsBD = productosBD.filter(p => p.familiaProducto && p.familiaProducto.idFamilia === 1);
-            
-            // Guardamos la lista temporalmente en el navegador
-            window.listaTopsActivos = topsBD;
-
-            topsBD.forEach(producto => {
-                const categoriaPrecio = producto.precioBase < 60 ? 'bajo' : 'alto';
-                
-                const tallaString = producto.talla ? producto.talla : "Única";
-                const tallasArray = tallaString.split(',');
-                let tallasHTML = '';
-                tallasArray.forEach(t => {
-                    tallasHTML += `<span class="talla-btn">${t.trim()}</span>`;
-                });
-                
-                const imagenSrc = producto.imagen ? producto.imagen : "../img/mariposa.png";
-
-                // OBSERVACIÓN: El botón ahora dispara la función "agregarDesdeCatalogo" enviando el ID
-                const tarjetaHTML = `
-                    <a href="producto.html?id=${producto.idProducto}" class="producto-card" data-tipo="crop-top" data-color="${producto.color.toLowerCase()}" data-precio="${categoriaPrecio}">
-                        <div class="img-container">
-                            <img src="${imagenSrc}" alt="${producto.sku}">
-                        </div>
-                        <div class="producto-info">
-                            <div class="producto-header">
-                                <div>
-                                    <span class="marca">Monarca mujer</span>
-                                    <h3>${producto.sku}</h3>
-                                </div>
-                                <div class="precio-container">
-                                    <span class="precio-actual">S/ ${producto.precioBase.toFixed(2)}</span>
-                                </div>
-                            </div>
-                            <div class="producto-hover-info">
-                                <hr class="linea-divisora">
-                                <div class="tallas">${tallasHTML}</div>
-<button class="btn-agregar" onclick="event.preventDefault(); event.stopPropagation(); window.agregarDesdeCatalogo(${producto.idProducto});">AGREGAR AL CARRITO</button>                            </div>
-                        </div>
-                    </a>
-                `;
-                contenedor.innerHTML += tarjetaHTML;
-            });
-
-            inicializarFiltros();
-
-        } catch (error) {
-            console.error("Error conectando con Java:", error);
-            document.getElementById('contenedor-productos').innerHTML = '<p style="text-align:center; width:100%;">No hay conexión con el servidor.</p>';
-        }
-    }
-
-    // Función puente: Busca el producto por su ID y lo manda a carrito.js
-   // Función puente: Busca el producto y le asigna la primera talla
-    window.agregarDesdeCatalogo = function(idProducto) {
-        const productoSeleccionado = window.listaTopsActivos.find(p => p.idProducto === idProducto);
-        if(productoSeleccionado) {
-            // Tomamos la primera talla que encuentre en la base de datos
-            const primeraTalla = productoSeleccionado.talla ? productoSeleccionado.talla.split(',')[0].trim() : "Única";
-            productoSeleccionado.tallaSeleccionada = primeraTalla;
-            
-            agregarAlCarrito(productoSeleccionado);
-        }
-    };
-
-
-    // 4. LÓGICA DE FILTRADO
-    function inicializarFiltros() {
-        const checkboxes = document.querySelectorAll('.filtro-opciones input[type="checkbox"]');
-        const productos = document.querySelectorAll('.producto-card');
-        const buscador = document.getElementById('buscador-productos'); 
-
-        checkboxes.forEach(box => box.addEventListener('change', filtrarProductos));
-        if(buscador) buscador.addEventListener('input', filtrarProductos); 
-
-        function filtrarProductos() {
-            const tipos = Array.from(document.querySelectorAll('.filtro-grupo:nth-child(2) input:checked')).map(cb => cb.value); 
-            const colores = Array.from(document.querySelectorAll('.filtro-grupo:nth-child(3) input:checked')).map(cb => cb.value);
-            const precios = Array.from(document.querySelectorAll('.filtro-grupo:nth-child(5) input:checked')).map(cb => cb.value);
-            const textoBusqueda = buscador ? buscador.value.toLowerCase() : ""; 
-
-            productos.forEach(producto => {
-                const pTipo = producto.getAttribute('data-tipo');
-                const pColor = producto.getAttribute('data-color');
-                const pPrecio = producto.getAttribute('data-precio');
-                const pTitulo = producto.querySelector('h3').textContent.toLowerCase();
-
-                const coincideTipo = tipos.length === 0 || tipos.includes(pTipo);
-                const coincideColor = colores.length === 0 || colores.includes(pColor);
-                const coincidePrecio = precios.length === 0 || precios.includes(pPrecio);
-                const coincideBusqueda = pTitulo.includes(textoBusqueda);
-
-                if (coincideTipo && coincideColor && coincidePrecio && coincideBusqueda) {
-                    producto.style.display = 'block';
-                } else {
-                    producto.style.display = 'none';
-                }
-            });
-        }
-    }
-
-    // ¡ARRANCAR LA FUNCIÓN!
-    cargarProductosDesdeBD();
-});
-    </script>
+    <script src="../js/catalogo.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y" crossorigin="anonymous"></script>

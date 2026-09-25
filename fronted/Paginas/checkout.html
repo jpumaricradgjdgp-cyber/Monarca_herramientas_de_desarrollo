@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/topstyle.css"> 
     <link rel="icon" href="../img/mariposa.png">
+<script src="../js/tienda.js"></script>
 </head>
 <body>
 
@@ -80,23 +81,11 @@
 
                     <div class="seccion-checkout">
                         <h3>3. Método de Pago</h3>
-                        <div class="opciones-pago">
-                            <label class="opcion-radio">
-                                <input type="radio" name="pago" value="tarjeta" checked>
-                                <span><i class="far fa-credit-card"></i> Tarjeta de Crédito / Débito</span>
-                            </label>
-                            <label class="opcion-radio">
-                                <input type="radio" name="pago" value="yape">
-                                <span><i class="fas fa-qrcode"></i> Yape / Plin</span>
-                            </label>
-                            <label class="opcion-radio">
-                                <input type="radio" name="pago" value="efectivo">
-                                <span><i class="fas fa-money-bill-wave"></i> Pago contra entrega</span>
-                            </label>
+                        <div class="opciones-pago"><p>Cargando métodos de pago...</p>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-pagar">CONFIRMAR PEDIDO Y PAGAR</button>
+                    <button type="submit" class="btn-pagar">CONFIRMAR PEDIDO</button>
                 </form>
             </div>
 
@@ -118,7 +107,7 @@
                         </div>
                         <div class="fila-total">
                             <span>Costo de Envío</span>
-                            <span id="check-envio">S/ 10.00</span>
+                            <span id="check-envio">S/ 0.00</span>
                         </div>
                         <hr>
                         <div class="fila-total gran-total">
@@ -139,128 +128,7 @@
         </div>
     </footer>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-    // 1. Leer el carrito de la memoria
-    let carrito = JSON.parse(localStorage.getItem("monarca_carrito")) || [];
-    const costoEnvio = 10.00;
-
-    // 2. Si el carrito está vacío, redirigir al inicio
-    if (carrito.length === 0) {
-        alert("Tu carrito está vacío. Serás redirigido a la tienda.");
-        window.location.href = "../index.html";
-        return;
-    }
-
-    // 3. Pintar los productos en el resumen
-    const contenedorItems = document.getElementById("checkout-items");
-    let subtotal = 0;
-
-    carrito.forEach(item => {
-        subtotal += (item.precio * item.cantidad);
-
-        const itemDiv = document.createElement("div");
-        itemDiv.classList.add("check-item");
-        itemDiv.innerHTML = `
-            <div class="check-img-contenedor">
-                <img src="${item.imagen}" alt="${item.titulo}">
-                <span class="check-cantidad">${item.cantidad}</span>
-            </div>
-            <div class="check-info">
-                <h4>${item.titulo}</h4>
-                <p>Talla: ${item.talla}</p>
-            </div>
-            <div class="check-precio">
-                S/ ${(item.precio * item.cantidad).toFixed(2)}
-            </div>
-        `;
-        contenedorItems.appendChild(itemDiv);
-    });
-
-    // 4. Lógica de Descuentos
-    let porcentajeDescuento = 0;
-    if (subtotal >= 300) {
-        porcentajeDescuento = 0.20; // 20%
-    } else if (subtotal >= 200) {
-        porcentajeDescuento = 0.15; // 15%
-    } else if (subtotal >= 100) {
-        porcentajeDescuento = 0.10; // 10%
-    }
-
-    const montoDescuento = subtotal * porcentajeDescuento;
-    const subtotalConDescuento = subtotal - montoDescuento;
-    const totalFinal = subtotalConDescuento + costoEnvio;
-
-    // 5. Actualizar Totales en el HTML
-    document.getElementById("check-subtotal").textContent = `S/ ${subtotal.toFixed(2)}`;
-    document.getElementById("check-total").textContent = `S/ ${totalFinal.toFixed(2)}`;
-
-    if (montoDescuento > 0) {
-        document.getElementById("fila-descuento").style.display = "flex";
-        document.getElementById("check-descuento").textContent = `- S/ ${montoDescuento.toFixed(2)}`;
-    }
-
-    // 6. MANEJAR EL EVENTO DE PAGAR (Conectado al Backend)
-    const formCheckout = document.getElementById("form-checkout");
-formCheckout.addEventListener("submit", (e) => {
-    e.preventDefault(); // Evita que recargue la página
-    
-    // Llamamos a la función que SÍ guarda en la tabla 'pedidos'
-    confirmarCompraFinal(); 
-});
-});
-async function confirmarCompraFinal() {
-    const carrito = JSON.parse(localStorage.getItem("monarca_carrito")) || [];
-    const token = localStorage.getItem("token_monarca");
-
-    if (carrito.length === 0) return;
-
-    // Calculamos el total exacto
-    const totalCompra = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-
-    // Transformamos los datos al formato que espera PedidoRequestDto
-    const itemsParaBackend = carrito.map(item => ({
-        idProducto: item.idProducto,
-        cantidad: item.cantidad
-    }));
-
-    // Busca cuál opción está marcada
-    const metodoSeleccionado = document.querySelector('input[name="metodoPago"]:checked');
-    const idMetodo = metodoSeleccionado ? parseInt(metodoSeleccionado.value) : 1; // 1 es por defecto
-
-    // Empaquetamos los datos en la variable payload
-    const payload = {
-        total: parseFloat(totalCompra),
-        items: itemsParaBackend,
-        idMetodoPago: parseInt(idMetodo), 
-        idEstatusEnvio: 1,                
-        idTiendaRetiro: null
-    };
-
-    try {
-        const respuesta = await fetch('http://localhost:8080/api/pedidos/procesar', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token 
-            },
-            // CORRECCIÓN: Enviamos el 'payload' que acabamos de crear arriba
-            body: JSON.stringify(payload)
-        });
-
-        if (respuesta.ok) {
-            alert("¡Compra realizada con éxito! Ya aparecerá en el panel de ventas.");
-            localStorage.removeItem("monarca_carrito");
-            window.location.href = "../index.html";
-        } else {
-            const error = await respuesta.text();
-            alert("Error al procesar el pedido: " + error);
-        }
-    } catch (err) {
-        console.error("Error al hacer fetch:", err);
-        alert("Error de conexión con el servidor.");
-    }
-}
-    </script>
+    <script src="../js/carrito.js"></script>
+<script src="../js/checkout.js"></script>
 </body>
 </html>

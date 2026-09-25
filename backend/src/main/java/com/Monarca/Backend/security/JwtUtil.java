@@ -14,12 +14,14 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    // Clave secreta para firmar el token. Debe ser larga (mínimo 256 bits para HS256).
-    // Nota: Para un entorno de producción real, esto se saca del application.properties
-    private static final String SECRET_KEY = "ClaveSecretaSuperSeguraParaElProyectoMonarca2026!!!";
+    private final Key signingKey;
+
+    public JwtUtil(@org.springframework.beans.factory.annotation.Value("${jwt.secret}") String secret) {
+        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+        return signingKey;
     }
 
     // Extrae el correo (subject) del token
@@ -53,6 +55,7 @@ public class JwtUtil {
     public String generateToken(UserDetails userDetails) {
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
+                .claim("cv", com.Monarca.Backend.service.PasswordRecoveryService.hash(userDetails.getPassword()))
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // Válido por 10 horas
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -62,6 +65,8 @@ public class JwtUtil {
     // Valida que el token pertenezca al usuario y no esté expirado
     public Boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        return username.equals(userDetails.getUsername()) && !isTokenExpired(token)
+                && com.Monarca.Backend.service.PasswordRecoveryService.hash(userDetails.getPassword())
+                    .equals(extractAllClaims(token).get("cv", String.class));
     }
 }

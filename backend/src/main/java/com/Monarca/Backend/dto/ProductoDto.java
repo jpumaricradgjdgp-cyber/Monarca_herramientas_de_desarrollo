@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 @Setter
 public class ProductoDto {
 
+    private Long idVariante;
     private String nombre;
     private String categoria;
 
@@ -20,6 +21,7 @@ public class ProductoDto {
     private String colorHex;
 
     private BigDecimal precio;
+    private BigDecimal precioBase;
 
     private Integer stock;
     private Integer stockMinimo;

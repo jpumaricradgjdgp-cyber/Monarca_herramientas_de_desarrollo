@@ -1,7 +1,7 @@
 package com.Monarca.Backend.controller;
 
 import com.Monarca.Backend.dto.ProductoDto;
-import com.Monarca.Backend.model.Producto;
+import com.Monarca.Backend.dto.ProductoResponseDto;
 import com.Monarca.Backend.service.ProductoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -37,8 +37,8 @@ public ResponseEntity<?> listarTodos() {
 
     // Buscar por ID (Público)
     @GetMapping("/{id}")
-    public ResponseEntity<Producto> buscarPorId(@PathVariable Integer id) {
-        return productoService.buscarPorId(id)
+    public ResponseEntity<ProductoResponseDto> buscarPorId(@PathVariable Long id) {
+        return productoService.buscarCatalogoPorId(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -46,14 +46,14 @@ public ResponseEntity<?> listarTodos() {
     // Eliminar (Solo Admin)
     @DeleteMapping("/{id}")
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         productoService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
     // Añade este método en tu controlador
 @PutMapping("/{id}")
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-public ResponseEntity<?> actualizar(@PathVariable Integer id, @RequestBody ProductoDto productoDto) {
+public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody ProductoDto productoDto) {
     productoService.actualizar(id, productoDto);
     return ResponseEntity.ok().body("Producto actualizado con éxito");
 }

@@ -68,12 +68,6 @@ public class ProductoService {
     }
 
 
-    // Compatibilidad temporal con controladores antiguos
-    @Transactional(readOnly = true)
-    public Optional<Producto> buscarPorId(Integer id) {
-
-        return buscarPorId(id.longValue());
-    }
 
 
     // =========================================================
@@ -84,6 +78,8 @@ public class ProductoService {
     public Producto guardar(ProductoDto dto) {
 
         validarDto(dto);
+        validarImagen(dto.getImg());
+        if (dto.getPrecioBase() != null && dto.getPrecioBase().signum() < 0) throw new IllegalArgumentException("Precio base inválido");
 
 
         // -----------------------------------------------------
@@ -138,9 +134,7 @@ public class ProductoService {
                 )
         );
 
-        producto.setPrecioBase(
-                precio
-        );
+        producto.setPrecioBase(dto.getPrecioBase() != null ? dto.getPrecioBase() : precio);
 
         producto.setActivo(
                 true
@@ -298,6 +292,9 @@ public class ProductoService {
             ProductoDto dto
     ) {
 
+        validarImagen(dto.getImg());
+        if (dto.getPrecioBase() != null && dto.getPrecioBase().signum() < 0) throw new IllegalArgumentException("Precio base inválido");
+        if (dto.getPrecio() != null && dto.getPrecio().signum() < 0) throw new IllegalArgumentException("Precio inválido");
         Producto producto = productoRepository
                 .findById(id)
                 .orElseThrow(() ->
@@ -389,11 +386,8 @@ public class ProductoService {
         // PRECIO BASE
         // -----------------------------------------------------
 
-        if (dto.getPrecio() != null) {
-
-            producto.setPrecioBase(
-                    dto.getPrecio()
-            );
+        if (dto.getPrecioBase() != null) {
+            producto.setPrecioBase(dto.getPrecioBase());
         }
 
 
@@ -420,7 +414,12 @@ public class ProductoService {
         // NO EXISTEN VARIANTES
         // -----------------------------------------------------
 
-        if (variantes.isEmpty()) {
+        if (dto.getIdVariante() != null) {
+            variante = varianteRepository.findByIdForUpdate(dto.getIdVariante())
+                    .filter(v -> v.getProducto().getIdProducto().equals(id))
+                    .orElseThrow(() -> new IllegalArgumentException("La variante no pertenece al producto"));
+        }
+        else if (variantes.isEmpty()) {
 
             variante =
                     new VarianteProducto();
@@ -450,7 +449,7 @@ public class ProductoService {
         else if (variantes.size() == 1) {
 
             variante =
-                    variantes.get(0);
+                    varianteRepository.findByIdForUpdate(variantes.get(0).getIdVariante()).orElseThrow();
 
         }
 
@@ -465,6 +464,7 @@ public class ProductoService {
                             variantes,
                             dto
                     );
+            variante = varianteRepository.findByIdForUpdate(variante.getIdVariante()).orElseThrow();
         }
 
 
@@ -673,16 +673,6 @@ public class ProductoService {
     // COMPATIBILIDAD TEMPORAL
     // =========================================================
 
-    public Producto actualizar(
-            Integer id,
-            ProductoDto dto
-    ) {
-
-        return actualizar(
-                id.longValue(),
-                dto
-        );
-    }
 
 
     // =========================================================
@@ -704,21 +694,12 @@ public class ProductoService {
         }
 
 
-        productoRepository.deleteById(
-                id
-        );
+        Producto producto = productoRepository.findById(id).orElseThrow();
+        producto.setActivo(false);
+        productoRepository.save(producto);
     }
 
 
-    // Compatibilidad temporal
-    public void eliminar(
-            Integer id
-    ) {
-
-        eliminar(
-                id.longValue()
-        );
-    }
 
 
     // =========================================================
@@ -738,116 +719,30 @@ public class ProductoService {
      */
     @Transactional(readOnly = true)
     public List<ProductoResponseDto> listarCatalogo() {
-
-        return productoRepository
-                .findAll()
-                .stream()
-
-                // Solo productos activos
-                .filter(producto ->
-                        Boolean.TRUE.equals(
-                                producto.getActivo()
-                        )
-                )
-
-                .map(producto -> {
-
-
-                    // =========================================
-                    // VARIANTES
-                    // =========================================
-
-                    List<VarianteProductoResponseDto> variantes =
-                            varianteRepository
-                                    .findByProducto_IdProductoAndActivoTrue(
-                                            producto.getIdProducto()
-                                    )
-                                    .stream()
-
-                                    .map(variante ->
-                                            new VarianteProductoResponseDto(
-
-                                                    variante.getIdVariante(),
-
-                                                    variante.getSku(),
-
-                                                    variante.getTalla(),
-
-                                                    variante.getColor(),
-
-                                                    variante.getColorHex(),
-
-                                                    variante.getPrecio(),
-
-                                                    variante.getStock()
-                                            )
-                                    )
-
-                                    .toList();
-
-
-                    // =========================================
-                    // IMAGEN PRINCIPAL
-                    // =========================================
-
-                    String imagen =
-                            imagenRepository
-                                    .findFirstByProducto_IdProductoAndPrincipalTrue(
-                                            producto.getIdProducto()
-                                    )
-
-                                    .map(
-                                            ImagenProducto::getUrl
-                                    )
-
-                                    .orElse(
-                                            null
-                                    );
-
-
-                    // =========================================
-                    // CATEGORÍA
-                    // =========================================
-
-                    String categoria =
-                            producto.getCategoria() != null
-                                    ? producto
-                                            .getCategoria()
-                                            .getNombre()
-                                    : null;
-
-
-                    // =========================================
-                    // RESPUESTA DEL PRODUCTO
-                    // =========================================
-
-                    return new ProductoResponseDto(
-
-                            producto.getIdProducto(),
-
-                            producto.getNombre(),
-
-                            producto.getSlug(),
-
-                            producto.getDescripcion(),
-
-                            producto.getMarca(),
-
-                            producto.getPrecioBase(),
-
-                            producto.getDestacado(),
-
-                            categoria,
-
-                            imagen,
-
-                            variantes
-                    );
-                })
-
-                .toList();
+        return productoRepository.findAll().stream()
+                .filter(p -> Boolean.TRUE.equals(p.getActivo()))
+                .map(this::convertirRespuesta).toList();
     }
 
+    @Transactional(readOnly = true)
+    public Optional<ProductoResponseDto> buscarCatalogoPorId(Long id) {
+        return productoRepository.findById(id)
+                .filter(p -> Boolean.TRUE.equals(p.getActivo()))
+                .map(this::convertirRespuesta);
+    }
+
+    private ProductoResponseDto convertirRespuesta(Producto producto) {
+        List<VarianteProductoResponseDto> variantes = varianteRepository
+                .findByProducto_IdProductoAndActivoTrue(producto.getIdProducto()).stream()
+                .map(v -> new VarianteProductoResponseDto(v.getIdVariante(), v.getSku(),
+                        v.getTalla(), v.getColor(), v.getColorHex(), v.getPrecio(), v.getStock()))
+                .toList();
+        String imagen = imagenRepository.findFirstByProducto_IdProductoAndPrincipalTrue(producto.getIdProducto())
+                .map(ImagenProducto::getUrl).orElse(null);
+        return new ProductoResponseDto(producto.getIdProducto(), producto.getNombre(), producto.getSlug(),
+                producto.getDescripcion(), producto.getMarca(), producto.getPrecioBase(), producto.getDestacado(),
+                producto.getCategoria() == null ? null : producto.getCategoria().getNombre(), imagen, variantes);
+    }
 
     // =========================================================
     // BUSCAR VARIANTE
@@ -1109,4 +1004,15 @@ public class ProductoService {
 
         return valor.trim();
     }
+    private void validarImagen(String imagen) {
+        if (imagen == null || imagen.isBlank()) return;
+        try {
+            java.net.URI uri = java.net.URI.create(imagen.trim());
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null)
+                throw new IllegalArgumentException();
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("La imagen debe ser una URL HTTPS válida");
+        }
+    }
+
 }

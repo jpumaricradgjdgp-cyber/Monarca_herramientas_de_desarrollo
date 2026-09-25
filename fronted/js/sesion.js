@@ -1,7 +1,7 @@
 // sesion.js - Control visual con desencriptación de JWT
 document.addEventListener("DOMContentLoaded", () => {
     const token = localStorage.getItem('token_monarca');
-    const linkPerfil = document.querySelector('.iconos-usuario a[href="login.html"]') || document.getElementById('link-perfil');
+    const linkPerfil = document.querySelector('.iconos-usuario a[href$="login.html"]') || document.getElementById('link-perfil');
 
     if (token && linkPerfil) {
         try {
@@ -38,9 +38,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 btnLogout.onclick = (e) => {
                     e.preventDefault();
-                    localStorage.clear();
+                    localStorage.removeItem('token_monarca');
+                    localStorage.removeItem('rol_monarca');
                     alert("Sesión cerrada.");
-                    window.location.href = "../index.html"; 
+                    window.location.href = new URL('index.html', TIENDA_RAIZ).href;
                 };
                 linkPerfil.parentNode.appendChild(btnLogout);
             }
