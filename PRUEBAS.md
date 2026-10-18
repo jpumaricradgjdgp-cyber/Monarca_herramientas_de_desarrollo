@@ -35,7 +35,7 @@ Si se desea imponer esta regla, el propietario debe configurar los checks como
 obligatorios en las reglas de protección de la rama.
 
 Verificación local (2026-10-18): Maven verify terminó con BUILD SUCCESS, 24 pruebas sin fallos ni errores y sin omisiones. npm ci y las cinco suites de navegador pasaron en Windows con Chrome instalado: login, flujo de compra, catálogo, encabezado y Nosotros. Las tres últimas suites incorporan las comprobaciones preparadas durante los cambios anteriores del equipo.
-Estado GitHub Actions: PENDIENTE hasta subir el workflow y ejecutar el PR.
+Resultado de GitHub Actions verificado: Backend Java 21 y Frontend Chromium aprobaron en main, commit 0bde0f84a414753524185ea80babbd0685cdd3c7. [Ver ejecución](https://github.com/jpumaricradgjdgp-cyber/Monarca_herramientas_de_desarrollo/actions/runs/39141758866).
 No registrar como aprobada una ejecución que todavía no ocurrió.
 
 Referencias de configuración: [Playwright CI](https://playwright.dev/docs/ci) y [setup-java](https://github.com/actions/setup-java/tree/v6).
@@ -51,5 +51,5 @@ npm test pasó las seis suites en Chrome local con API simulada. La nueva suite
 admin-pedidos comprueba la referencia obligatoria, mensajes 409/403, conservación
 de campos, doble envío, avance de estados y confirmación de cancelación.
 
-Pendiente: ejecutar el nuevo PR en GitHub Actions y comprobar manualmente el flujo
+El PR de pedidos y su integración pasaron CI. Pendiente: comprobar manualmente el flujo
 contra Supabase. Las pruebas H2 no certifican el comportamiento de PostgreSQL.
