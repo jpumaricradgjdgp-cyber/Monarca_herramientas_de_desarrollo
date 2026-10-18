@@ -35,5 +35,6 @@ Preguntas para ensayar:
 - [ ] Capturas actuales de la evidencia pertinente, sin credenciales ni datos privados.
 - [ ] Práctica de conflicto ejecutada y comprendida por quienes la presenten.
 - [ ] Backend local configurado y datos de prueba preparados si se hará demostración.
-- [ ] Documento de coordinación y plataforma de videollamada confirmados.
+- [x] Plataforma de videollamada confirmada: Zoom.
+- [ ] Enlace de lectura del Word compartido y evidencia de coordinación adjuntos.
 - [ ] Tiempo de intervención ensayado por todos.

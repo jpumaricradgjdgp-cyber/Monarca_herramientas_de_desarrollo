@@ -101,7 +101,7 @@ No se encontró evidencia documentada de un conflicto real en las integraciones 
 | GitHub Actions | Verificación automática del backend y frontend | Workflow y ejecución aprobada de main |
 | WhatsApp | Coordinación del grupo, indicada por el usuario | Pendiente de una captura autorizada de una decisión concreta, con contexto y fecha |
 | Word en línea | Trabajo con documento compartido, indicado por el usuario | Pendiente de enlace de lectura e historial/comentarios; confirmar si se almacena en OneDrive |
-| Videollamadas | El usuario indicó "meet en zoom" | Confirmar si se utilizó Zoom, Google Meet o ambos y adjuntar evidencia real de la reunión |
+| Zoom | Reuniones del equipo, confirmado por el usuario | Pendiente de evidencia real de una reunión y su acuerdo principal |
 
 No se registran fechas ni reuniones inventadas. Adjuntar solo capturas pertinentes y proteger datos personales. El [tablero de Trello](https://trello.com/b/inNPYEny/monarca-avance-2-trabajo-del-equipo), creado el 18 de octubre de 2026, consolida los PR y organiza pendientes actuales; no se presenta como planificación previa al desarrollo. Tiene 14 tarjetas en cuatro listas. Los responsables se indican en los títulos y descripciones; la incorporación de las demás cuentas del equipo a Trello está pendiente.
 

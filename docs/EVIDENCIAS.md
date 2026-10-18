@@ -23,7 +23,8 @@ Fecha de preparación: 18 de octubre de 2026. Las capturas y enlaces adicionales
 - [ ] Ejercicio de conflicto ejecutado por el equipo: causa, marcadores, resolución, commit e historial.
 - [ ] Captura pertinente de coordinación por WhatsApp, con autorización de los participantes.
 - [ ] Enlace de lectura al documento de Word compartido e historial o comentarios de colaboración. Confirmar almacenamiento OneDrive.
-- [ ] Plataforma de videollamada confirmada y evidencia de una reunión real.
+- [x] Plataforma de videollamada confirmada por el usuario: Zoom.
+- [ ] Evidencia real de una reunión por Zoom y su acuerdo principal.
 - [ ] Capturas de la interfaz antes/después y demostración explicada por cada integrante.
 - [ ] CSV completo del diagnóstico de columnas, si desean acreditar el resultado reportado de forma reproducible.
 - [ ] Prueba manual contra Supabase: pedido pagado/enviado/entregado y otro cancelado con comprobación de stock.
