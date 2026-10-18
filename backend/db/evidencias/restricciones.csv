@@ -1,0 +1,44 @@
+tabla,restriccion,tipo,definicion,validada
+categorias,categorias_pkey,PRIMARY KEY,PRIMARY KEY (id_categoria),true
+categorias,categorias_nombre_key,UNIQUE,UNIQUE (nombre),true
+categorias,categorias_slug_key,UNIQUE,UNIQUE (slug),true
+detalles_pedido,chk_detalle_cantidad,CHECK,CHECK ((cantidad > 0)),true
+detalles_pedido,chk_detalle_precio,CHECK,CHECK ((precio_unitario >= (0)::numeric)),true
+detalles_pedido,chk_detalle_subtotal,CHECK,CHECK ((subtotal >= (0)::numeric)),true
+detalles_pedido,fk_detalle_pedido,FOREIGN KEY,FOREIGN KEY (id_pedido) REFERENCES monarca.pedidos(id_pedido) ON DELETE CASCADE,true
+detalles_pedido,fk_detalle_variante,FOREIGN KEY,FOREIGN KEY (id_variante) REFERENCES monarca.variantes_producto(id_variante),true
+detalles_pedido,detalles_pedido_pkey,PRIMARY KEY,PRIMARY KEY (id_detalle),true
+imagenes_producto,fk_imagen_producto,FOREIGN KEY,FOREIGN KEY (id_producto) REFERENCES monarca.productos(id_producto) ON DELETE CASCADE,true
+imagenes_producto,fk_imagen_variante,FOREIGN KEY,FOREIGN KEY (id_variante) REFERENCES monarca.variantes_producto(id_variante) ON DELETE CASCADE,true
+imagenes_producto,imagenes_producto_pkey,PRIMARY KEY,PRIMARY KEY (id_imagen),true
+metodos_pago,metodos_pago_pkey,PRIMARY KEY,PRIMARY KEY (id_metodo_pago),true
+metodos_pago,metodos_pago_codigo_key,UNIQUE,UNIQUE (codigo),true
+metodos_pago,metodos_pago_nombre_key,UNIQUE,UNIQUE (nombre),true
+pagos,chk_pago_estado,CHECK,"CHECK (((estado)::text = ANY ((ARRAY['PENDIENTE'::character varying, 'EN_REVISION'::character varying, 'PAGADO'::character varying, 'RECHAZADO'::character varying, 'CANCELADO'::character varying, 'REEMBOLSADO'::character varying])::text[])))",true
+pagos,chk_pago_monto,CHECK,CHECK ((monto >= (0)::numeric)),true
+pagos,fk_pago_metodo,FOREIGN KEY,FOREIGN KEY (id_metodo_pago) REFERENCES monarca.metodos_pago(id_metodo_pago),true
+pagos,fk_pago_pedido,FOREIGN KEY,FOREIGN KEY (id_pedido) REFERENCES monarca.pedidos(id_pedido) ON DELETE CASCADE,true
+pagos,pagos_pkey,PRIMARY KEY,PRIMARY KEY (id_pago),true
+pedidos,chk_pedido_descuento,CHECK,CHECK ((descuento >= (0)::numeric)),true
+pedidos,chk_pedido_envio,CHECK,CHECK ((costo_envio >= (0)::numeric)),true
+pedidos,chk_pedido_estado,CHECK,"CHECK (((estado)::text = ANY ((ARRAY['PENDIENTE_PAGO'::character varying, 'PAGADO'::character varying, 'CONFIRMADO'::character varying, 'PREPARANDO'::character varying, 'ENVIADO'::character varying, 'ENTREGADO'::character varying, 'CANCELADO'::character varying])::text[])))",true
+pedidos,chk_pedido_subtotal,CHECK,CHECK ((subtotal >= (0)::numeric)),true
+pedidos,chk_pedido_total,CHECK,CHECK ((total >= (0)::numeric)),true
+pedidos,fk_pedido_usuario,FOREIGN KEY,FOREIGN KEY (id_usuario) REFERENCES monarca.usuarios(id_usuario),true
+pedidos,pedidos_pkey,PRIMARY KEY,PRIMARY KEY (id_pedido),true
+pedidos,pedidos_codigo_pedido_key,UNIQUE,UNIQUE (codigo_pedido),true
+productos,chk_producto_precio,CHECK,CHECK ((precio_base >= (0)::numeric)),true
+productos,fk_producto_categoria,FOREIGN KEY,FOREIGN KEY (id_categoria) REFERENCES monarca.categorias(id_categoria),true
+productos,productos_pkey,PRIMARY KEY,PRIMARY KEY (id_producto),true
+productos,productos_slug_key,UNIQUE,UNIQUE (slug),true
+roles,roles_pkey,PRIMARY KEY,PRIMARY KEY (id_rol),true
+roles,roles_nombre_key,UNIQUE,UNIQUE (nombre),true
+usuarios,fk_usuario_rol,FOREIGN KEY,FOREIGN KEY (id_rol) REFERENCES monarca.roles(id_rol),true
+usuarios,usuarios_pkey,PRIMARY KEY,PRIMARY KEY (id_usuario),true
+variantes_producto,chk_variante_precio,CHECK,CHECK ((precio >= (0)::numeric)),true
+variantes_producto,chk_variante_stock,CHECK,CHECK ((stock >= 0)),true
+variantes_producto,chk_variante_stock_minimo,CHECK,CHECK ((stock_minimo >= 0)),true
+variantes_producto,fk_variante_producto,FOREIGN KEY,FOREIGN KEY (id_producto) REFERENCES monarca.productos(id_producto) ON DELETE CASCADE,true
+variantes_producto,variantes_producto_pkey,PRIMARY KEY,PRIMARY KEY (id_variante),true
+variantes_producto,uk_producto_variante,UNIQUE,"UNIQUE (id_producto, talla, color)",true
+variantes_producto,variantes_producto_sku_key,UNIQUE,UNIQUE (sku),true

@@ -36,6 +36,7 @@ class FlujoApiTest {
     @MockBean PedidoRepository pedidos;
     @MockBean MetodoPagoRepository metodos;
     @MockBean PedidoService pedidoService;
+    @MockBean PedidoEstadoService pedidoEstadoService;
     @DynamicPropertySource static void propiedades(DynamicPropertyRegistry registry) {
         String claveEfimera = UUID.randomUUID().toString() + UUID.randomUUID();
         registry.add("jwt.secret", () -> claveEfimera);
@@ -99,5 +100,38 @@ class FlujoApiTest {
         when(metodos.findAll()).thenReturn(List.of(metodo));
         mvc.perform(get("/api/metodos-pago").header("Authorization",token("CLIENTE")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].idMetodoPago").value(37));
+    }
+
+    @Test void soloAdminPuedeCambiarEstado() throws Exception {
+        mvc.perform(put("/api/pedidos/1/estado").contentType("application/json")
+                .content("{\"estado\":\"CANCELADO\"}")).andExpect(status().isForbidden());
+        mvc.perform(put("/api/pedidos/1/estado").header("Authorization", token("CLIENTE"))
+                .contentType("application/json").content("{\"estado\":\"CANCELADO\"}"))
+                .andExpect(status().isForbidden());
+        verifyNoInteractions(pedidoEstadoService);
+    }
+    @Test void adminCambiaEstadoConReferenciaSinExponerEntidad() throws Exception {
+        Pedido pedido = new Pedido(); pedido.setIdPedido(1L); pedido.setEstado("PAGADO");
+        when(pedidoEstadoService.actualizar(eq(1L), any())).thenReturn(pedido);
+        mvc.perform(put("/api/pedidos/1/estado").header("Authorization", token("ADMIN"))
+                .contentType("application/json").content("{\"estado\":\"PAGADO\",\"referenciaPago\":\"YAPE-123\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.estado").value("PAGADO"))
+                .andExpect(jsonPath("$.usuario").doesNotExist());
+        verify(pedidoEstadoService).actualizar(1L, new PedidoEstadoDto("PAGADO", "YAPE-123"));
+    }
+    @Test void erroresDeEstadoConservanCodigoYMensaje() throws Exception {
+        when(pedidoEstadoService.actualizar(eq(1L), any())).thenThrow(
+                new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT, "El pedido ya cambió."));
+        mvc.perform(put("/api/pedidos/1/estado").header("Authorization", token("ADMIN"))
+                .contentType("application/json").content("{\"estado\":\"CANCELADO\"}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.error").value("El pedido ya cambió."));
+    }
+    @Test void restriccionesNoExponenDetallesDeLaBase() throws Exception {
+        when(pedidoEstadoService.actualizar(eq(1L), any())).thenThrow(
+                new org.springframework.dao.DataIntegrityViolationException("detalle interno de SQL"));
+        mvc.perform(put("/api/pedidos/1/estado").header("Authorization", token("ADMIN"))
+                .contentType("application/json").content("{\"estado\":\"CANCELADO\"}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.error").value(
+                        "No se pudo guardar el estado. Actualiza la lista y revisa los datos del pedido."));
     }
 }

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="icon" href="../img/mariposa.png">
 <script src="../js/tienda.js"></script>
+    <link rel="stylesheet" href="../css/header-mobile.css">
 </head>
 <body>
     <header class="header">
@@ -19,22 +20,22 @@
                     <img src="../img/logo-desktop.png" alt="Logo Monarca">
                 </picture>
             </a>
-            <input type="checkbox" id="menu-toggle" class="menu-toggle">
+            <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Mostrar u ocultar menú principal" aria-controls="navegacion-principal">
             <label for="menu-toggle" class="menu-icon">
                 <span></span>
                 <span></span>
                 <span></span>
             </label>
 
-            <nav class="navbar">
+            <nav class="navbar" id="navegacion-principal" aria-label="Navegación principal">
                 <ul>
                     <li><a href="../index.html">Inicio</a></li>
                     <li><a href="Tops.html">Tops</a></li>
                     <li><a href="Bottoms.html">Bottoms</a></li>
                     <li><a href="Calzado.html">Calzado</a></li>
                     <li><a href="Accesorios.html">Accesorios</a></li>
-                    <li><a href="Contacto.html" class="active">Contacto</a></li>
-                    <li><a href="Nosotros.html">Nosotros</a></li>
+                    <li><a href="Contacto.html">Contacto</a></li>
+                    <li><a href="Nosotros.html" class="active" aria-current="page">Nosotros</a></li>
                 </ul>      
             </nav>
              <div class="iconos-usuario">
@@ -232,14 +233,19 @@
                     Conoce la asignación de actividades y roles de cada integrante de nuestro equipo de desarrollo.
                 </p>
                 <!-- Utilizamos la misma clase del botón negro, pero con la función onclick -->
-                <button class="btn-comprar" onclick="abrirMatriz()" style="cursor: pointer;">VISUALIZAR MATRIZ</button>
+                <button id="abrir-matriz" type="button" class="btn-comprar"
+                        aria-haspopup="dialog" aria-controls="modalMatriz"
+                        onclick="abrirMatriz()" style="cursor: pointer;">VISUALIZAR MATRIZ</button>
             </div>
         </section>
     </main>
 
-    <div id="modalMatriz" class="modal">
+    <div id="modalMatriz" class="modal" role="dialog" aria-modal="true"
+         aria-label="Matriz de responsabilidades del equipo Monarca" hidden>
         <div class="modal-content">
-            <span class="close-btn" onclick="cerrarMatriz()">&times;</span>
+            <button id="cerrar-matriz" type="button" class="close-btn"
+                    aria-label="Cerrar matriz de responsabilidades"
+                    onclick="cerrarMatriz()">&times;</button>
             <img src="../img/Nosotros_img/Matriz de responsabilidad.png" alt="Matriz de Responsabilidad del equipo Monarca">
         </div>
     </div>
@@ -296,12 +302,43 @@
     </footer>
 
     <script>
-        const modal = document.getElementById("modalMatriz");
-        function abrirMatriz() { modal.style.display = "flex"; }
-        function cerrarMatriz() { modal.style.display = "none"; }
-        window.onclick = function(event) {
-            if (event.target == modal) { modal.style.display = "none"; }
+        const modalMatriz = document.getElementById("modalMatriz");
+        const botonCerrarMatriz = document.getElementById("cerrar-matriz");
+        let focoAnteriorMatriz = null;
+
+        function abrirMatriz() {
+            if (!modalMatriz.hidden) return;
+            focoAnteriorMatriz = document.activeElement;
+            modalMatriz.hidden = false;
+            modalMatriz.style.display = "flex";
+            botonCerrarMatriz.focus();
         }
+
+        function cerrarMatriz() {
+            if (modalMatriz.hidden) return;
+            modalMatriz.hidden = true;
+            modalMatriz.style.display = "none";
+            const destino = focoAnteriorMatriz instanceof HTMLElement
+                && focoAnteriorMatriz.isConnected
+                ? focoAnteriorMatriz
+                : document.getElementById("abrir-matriz");
+            destino.focus();
+        }
+
+        modalMatriz.addEventListener("click", function(event) {
+            if (event.target === modalMatriz) cerrarMatriz();
+        });
+
+        modalMatriz.addEventListener("keydown", function(event) {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                cerrarMatriz();
+            } else if (event.key === "Tab") {
+                // Cerrar es el único control interactivo dentro de este cuadro.
+                event.preventDefault();
+                botonCerrarMatriz.focus();
+            }
+        });
     </script>
     
 <div id="carrito-overlay" class="carrito-overlay"></div>

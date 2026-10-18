@@ -1,0 +1,81 @@
+/* Encabezado compacto compartido. Mantiene el estilo de escritorio. */
+@media (max-width: 900px) {
+    body { padding-top: 64px; }
+    .header { height: 64px; }
+    .header .menu-container {
+        box-sizing: border-box;
+        height: 63px;
+        width: 100%;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+    .header .logo { flex: 1 1 auto; min-width: 0; }
+    .header .logo img { max-height: 36px; max-width: 100%; width: auto; object-fit: contain; }
+    .header .menu-icon {
+        order: -1;
+        display: flex;
+        flex: 0 0 44px;
+        height: 44px;
+        margin: 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        cursor: pointer;
+    }
+    .header .menu-icon span {
+        display: block;
+        width: 22px;
+        height: 3px;
+        border-radius: 3px;
+        background: #333;
+        transition: transform .2s, opacity .2s;
+    }
+    /* Checkbox nativo accesible con teclado; su etiqueta muestra el icono. */
+    .header .menu-toggle {
+        display: block;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+    }
+    .header .menu-toggle:focus-visible + .menu-icon,
+    .header a:focus-visible { outline: 2px solid #333; outline-offset: 2px; }
+    .header .iconos-usuario { flex: 0 0 auto; gap: 2px; }
+    .header .icono-link,
+    .header #btn-logout {
+        display: inline-flex !important;
+        position: relative;
+        width: 44px;
+        height: 44px;
+        align-items: center;
+        justify-content: center;
+        margin: 0 !important;
+    }
+    .header .icono-link img { width: 32px; height: 32px; max-height: 32px; object-fit: contain; }
+    .header #user-name-display { display: none !important; }
+    .header .contador-carrito { top: 0; right: 0; width: 18px; height: 18px; font-size: 10px; }
+    .header .navbar {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        padding: 0;
+        max-height: calc(100dvh - 64px);
+        overflow-y: auto;
+        background: rgba(255,255,255,.96);
+        backdrop-filter: blur(15px);
+        border-bottom: 1px solid #e5e5e5;
+    }
+    .header #menu-toggle:checked ~ .navbar { display: block; left: 0; }
+    .header .navbar ul { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 8px 16px; margin: 0; }
+    .header .navbar a { display: flex; align-items: center; min-height: 44px; padding: 10px 12px; font-size: 14px; }
+    .header #menu-toggle:checked + .menu-icon span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+    .header #menu-toggle:checked + .menu-icon span:nth-child(2) { opacity: 0; }
+    .header #menu-toggle:checked + .menu-icon span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+}

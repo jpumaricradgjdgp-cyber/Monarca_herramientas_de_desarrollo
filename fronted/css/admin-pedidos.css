@@ -1,0 +1,10 @@
+.pedidos-scroll { margin-top: 15px; }
+.pedidos-scroll table { min-width: 780px; }
+.pedido-form { display: grid; gap: 8px; min-width: 230px; max-width: 320px; }
+.pedido-form label { font-size: .85rem; font-weight: bold; }
+.pedido-form input, .pedido-form select { box-sizing: border-box; width: 100%; padding: 9px; border: 1px solid #aaa; border-radius: 4px; }
+.pedido-form button { min-height: 40px; }
+.pedido-form button:disabled { cursor: wait; opacity: .6; }
+.referencia-pedido small { display: block; margin-top: 5px; color: #555; }
+.pedido-error { color: #a42020; margin: 0; }
+#mensaje-pedidos { color: #225a2a; }
