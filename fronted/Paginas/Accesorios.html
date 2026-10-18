@@ -9,6 +9,8 @@
     <link rel="icon" href="../img/mariposa.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 <script src="../js/tienda.js"></script>
+    <link rel="stylesheet" href="../css/catalogo.css">
+    <link rel="stylesheet" href="../css/header-mobile.css">
 </head>
 <body>
    <header class="header">
@@ -19,14 +21,14 @@
                     <img src="../img/logo-desktop.png" alt="Logo Monarca">
                 </picture>
             </a>
-            <input type="checkbox" id="menu-toggle" class="menu-toggle">
+            <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Mostrar u ocultar menú principal" aria-controls="navegacion-principal">
             <label for="menu-toggle" class="menu-icon">
                 <span></span>
                 <span></span>
                 <span></span>
             </label>
 
-            <nav class="navbar">
+            <nav class="navbar" id="navegacion-principal" aria-label="Navegación principal">
                 <ul>
                     <li><a href="../index.html">Inicio</a></li>
                     <li><a href="Tops.html">Tops</a></li>
@@ -118,15 +120,15 @@
         
         <aside class="sidebar-filtros">
             <div class="filtro-grupo buscador-container">
-                <input type="text" id="buscador-productos" placeholder="Buscar producto...">
+                <input type="text" id="buscador-productos" aria-label="Buscar producto" placeholder="Buscar producto...">
                 <i class="fas fa-search"></i>
             </div>
             <div class="filtro-grupo">
-                <div class="filtro-item">
+                <button type="button" class="filtro-item" aria-expanded="false" aria-controls="opciones-filtro-1">
                     <span>Tipo de producto</span>
-                    <i class="fas fa-plus"></i>
-                </div>
-                <div class="filtro-opciones">
+                    <i class="fas fa-plus" aria-hidden="true"></i>
+                </button>
+                <div class="filtro-opciones" id="opciones-filtro-1" hidden>
                     <label><input type="checkbox" value="bolso"> Bolsos y Carteras</label>
                     <label><input type="checkbox" value="lentes"> Lentes de Sol</label>
                     <label><input type="checkbox" value="joyeria"> Joyería</label>
@@ -136,11 +138,11 @@
             </div>
 
             <div class="filtro-grupo">
-                <div class="filtro-item">
+                <button type="button" class="filtro-item" aria-expanded="false" aria-controls="opciones-filtro-2">
                     <span>Color</span>
-                    <i class="fas fa-plus"></i>
-                </div>
-                <div class="filtro-opciones">
+                    <i class="fas fa-plus" aria-hidden="true"></i>
+                </button>
+                <div class="filtro-opciones" id="opciones-filtro-2" hidden>
                     <label><input type="checkbox" value="dorado"> Dorado</label>
                     <label><input type="checkbox" value="plateado"> Plateado</label>
                     <label><input type="checkbox" value="marron"> Beige / Marrón</label>
@@ -149,21 +151,21 @@
             </div>
 
             <div class="filtro-grupo">
-                <div class="filtro-item">
+                <button type="button" class="filtro-item" aria-expanded="false" aria-controls="opciones-filtro-3">
                     <span>Talla</span>
-                    <i class="fas fa-plus"></i>
-                </div>
-                <div class="filtro-opciones">
+                    <i class="fas fa-plus" aria-hidden="true"></i>
+                </button>
+                <div class="filtro-opciones" id="opciones-filtro-3" hidden>
                     <label><input type="checkbox" value="unica"> Talla Única</label>
                 </div>
             </div>
 
             <div class="filtro-grupo">
-                <div class="filtro-item">
+                <button type="button" class="filtro-item" aria-expanded="false" aria-controls="opciones-filtro-4">
                     <span>Precio</span>
-                    <i class="fas fa-plus"></i>
-                </div>
-                <div class="filtro-opciones">
+                    <i class="fas fa-plus" aria-hidden="true"></i>
+                </button>
+                <div class="filtro-opciones" id="opciones-filtro-4" hidden>
                     <label><input type="checkbox" value="bajo"> Menos de S/ 300</label>
                     <label><input type="checkbox" value="alto"> S/ 300 a más</label>
                 </div>
