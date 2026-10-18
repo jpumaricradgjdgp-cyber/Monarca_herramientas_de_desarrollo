@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test": "node tests/login.cjs && node tests/flujo.cjs && node tests/catalogo.cjs && node tests/header.cjs && node tests/nosotros.cjs"
+    "test": "node tests/login.cjs && node tests/flujo.cjs && node tests/catalogo.cjs && node tests/header.cjs && node tests/nosotros.cjs && node tests/admin-pedidos.cjs"
   },
   "devDependencies": {
     "playwright": "1.58.2"

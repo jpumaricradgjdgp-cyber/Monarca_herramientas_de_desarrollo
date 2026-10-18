@@ -39,3 +39,17 @@ Estado GitHub Actions: PENDIENTE hasta subir el workflow y ejecutar el PR.
 No registrar como aprobada una ejecución que todavía no ocurrió.
 
 Referencias de configuración: [Playwright CI](https://playwright.dev/docs/ci) y [setup-java](https://github.com/actions/setup-java/tree/v6).
+
+## Actualización: gestión de pedidos (2026-10-18)
+
+En feature/josue-pedidos, Maven verify pasó 44 pruebas sin fallos, errores ni
+omisiones y generó el JAR. Se añadieron comprobaciones del permiso ADMIN,
+transiciones y referencia de pago, así como persistencia conjunta, reversión
+transaccional y cancelaciones concurrentes en H2.
+
+npm test pasó las seis suites en Chrome local con API simulada. La nueva suite
+admin-pedidos comprueba la referencia obligatoria, mensajes 409/403, conservación
+de campos, doble envío, avance de estados y confirmación de cancelación.
+
+Pendiente: ejecutar el nuevo PR en GitHub Actions y comprobar manualmente el flujo
+contra Supabase. Las pruebas H2 no certifican el comportamiento de PostgreSQL.

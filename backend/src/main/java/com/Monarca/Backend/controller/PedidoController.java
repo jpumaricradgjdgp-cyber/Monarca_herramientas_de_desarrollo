@@ -1,6 +1,12 @@
 package com.Monarca.Backend.controller;
 
 import com.Monarca.Backend.dto.PedidoRequestDto;
+import com.Monarca.Backend.dto.PedidoEstadoDto;
+import com.Monarca.Backend.service.PedidoEstadoService;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.CannotAcquireLockException;
 import com.Monarca.Backend.model.Pedido;
 import com.Monarca.Backend.model.Usuario;
 import com.Monarca.Backend.repository.PedidoRepository;
@@ -20,6 +26,24 @@ import java.util.Map;
 @RequestMapping("/api/pedidos")
 @CrossOrigin(origins = "*")
 public class PedidoController {
+    @Autowired
+    private PedidoEstadoService pedidoEstadoService;
+
+    @PutMapping("/{id}/estado")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> actualizarEstado(@PathVariable Long id,
+            @RequestBody(required = false) PedidoEstadoDto solicitud) {
+        try {
+            Pedido pedido = pedidoEstadoService.actualizar(id, solicitud);
+            return ResponseEntity.ok(Map.of("idPedido", pedido.getIdPedido(), "estado", pedido.getEstado()));
+        } catch (ResponseStatusException ex) {
+            return ResponseEntity.status(ex.getStatusCode()).body(Map.of("error", ex.getReason()));
+        } catch (DataIntegrityViolationException | CannotAcquireLockException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error",
+                    "No se pudo guardar el estado. Actualiza la lista y revisa los datos del pedido."));
+        }
+    }
+
 
     @Autowired
     private UsuarioRepository usuarioRepository;
