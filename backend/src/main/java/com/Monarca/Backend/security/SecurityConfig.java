@@ -122,6 +122,8 @@ public class SecurityConfig {
                                 "/api/pedidos/procesar"
                         ).authenticated()
 
+                        .requestMatchers(HttpMethod.PUT, "/api/pedidos/*/estado").hasAuthority("ROLE_ADMIN")
+
                         // Solo administrador ve todos los pedidos
                         .requestMatchers(
                                 HttpMethod.GET,

@@ -38,8 +38,8 @@ Los identificadores @Id deben ser claves primarias y contar con generación de v
 - El servicio actual crea pedidos con `PENDIENTE_PAGO` y pagos con `PENDIENTE`.
   Los CHECK deben admitir esos valores. No ejecutar cambios basados únicamente
   en una lista de estados tomada de otra versión del proyecto.
-- En esta rama PedidoController no tiene un endpoint para actualizar estados.
-  Ese flujo necesita trabajo de backend; estas consultas no lo implementan.
+- El endpoint PUT /api/pedidos/{id}/estado permite al administrador cambiar estados.
+  Su comportamiento y las pruebas se describen en PEDIDOS.md, en la raíz del repositorio.
 
 ## Evidencia revisada
 
