@@ -4,7 +4,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!contenedor && !recomendados) return;
     const normalizar = valor => String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     document.querySelectorAll('.filtro-item').forEach(boton => boton.addEventListener('click', () => {
-        boton.classList.toggle('abierto'); boton.nextElementSibling?.classList.toggle('activo');
+        const opciones = document.getElementById(boton.getAttribute('aria-controls'));
+        if (!opciones) return;
+        const abierto = boton.getAttribute('aria-expanded') !== 'true';
+        boton.setAttribute('aria-expanded', String(abierto));
+        boton.classList.toggle('abierto', abierto);
+        opciones.classList.toggle('activo', abierto);
+        opciones.hidden = !abierto;
     }));
     try {
         const productos = await obtenerTienda('/productos');

@@ -11,6 +11,7 @@
     
     <link rel="stylesheet" href="../css/contacto.css">
 <script src="../js/tienda.js"></script>
+    <link rel="stylesheet" href="../css/header-mobile.css">
 </head>
 <body>
 
@@ -23,14 +24,14 @@
                     <img src="../img/logo-desktop.png" alt="Logo Monarca">
                 </picture>
             </a>
-            <input type="checkbox" id="menu-toggle" class="menu-toggle">
+            <input type="checkbox" id="menu-toggle" class="menu-toggle" aria-label="Mostrar u ocultar menú principal" aria-controls="navegacion-principal">
             <label for="menu-toggle" class="menu-icon">
                 <span></span>
                 <span></span>
                 <span></span>
             </label>
 
-            <nav class="navbar">
+            <nav class="navbar" id="navegacion-principal" aria-label="Navegación principal">
                 <ul>
                     <li><a href="../index.html">Inicio</a></li>
                     <li><a href="Tops.html">Tops</a></li>

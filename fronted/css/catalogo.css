@@ -1,0 +1,42 @@
+.contenedor-principal, .contenedor-principal * { box-sizing: border-box; }
+/* Ajustes compartidos de las cuatro categorias del catalogo. */
+.sidebar-filtros .filtro-item {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    text-align: left;
+    gap: 12px;
+    padding-inline: 8px;
+    min-height: 44px;
+}
+.sidebar-filtros .filtro-item:focus-visible,
+.sidebar-filtros input:focus-visible {
+    outline: 2px solid #111;
+    outline-offset: 3px;
+}
+.sidebar-filtros .filtro-opciones[hidden] { display: none; }
+.sidebar-filtros .filtro-opciones.activo { max-height: none; }
+.sidebar-filtros .filtro-opciones label { min-height: 44px; }
+.contenedor-principal > .grid-productos,
+.grid-productos .producto-card,
+.grid-productos .producto-header > div { min-width: 0; }
+.grid-productos .producto-header { flex-wrap: wrap; gap: 8px; }
+.grid-productos .producto-header h3 { overflow-wrap: anywhere; }
+.grid-productos .tallas { flex-wrap: wrap; }
+.grid-productos .producto-card:focus-within .producto-hover-info {
+    max-height: none;
+    opacity: 1;
+    margin-top: 10px;
+}
+@media (max-width: 900px) {
+    .contenedor-principal { gap: 24px; }
+    .sidebar-filtros { margin-bottom: 0; }
+}
+@media (hover: none), (pointer: coarse) {
+    .grid-productos .producto-hover-info {
+        max-height: none;
+        opacity: 1;
+        margin-top: 10px;
+    }
+}
