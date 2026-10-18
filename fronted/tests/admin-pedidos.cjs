@@ -29,6 +29,8 @@ const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),
     return route.fulfill({contentType:'application/json',body:JSON.stringify({idPedido:id,estado:datos.estado})});
    }
    if(url.pathname==='/api/pedidos'&&modo==='sinpermiso')return route.fulfill({status:403,body:'{}'});
+   // Simula una recarga lenta de la tabla para detectar lecturas del formulario anterior.
+   if(url.pathname==='/api/pedidos')await new Promise(r=>setTimeout(r,150));
    const data=url.pathname==='/api/pedidos'?pedidos:[];
    await route.fulfill({contentType:'application/json',body:JSON.stringify(data)});
   });
@@ -51,16 +53,20 @@ const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),
   await form().evaluate(f=>f.requestSubmit());assert.equal(requests.length,2);
   liberar();await page.locator('#mensaje-pedidos').getByText('Pedido #1 actualizado a PAGADO.').waitFor();
   assert.deepEqual(requests[1].datos,{estado:'PAGADO',referenciaPago:'YAPE-123'});
+  // El mensaje se muestra antes del GET: esperar al formulario nuevo, no solo al aviso.
+  await page.waitForFunction(()=>document.querySelector('form[data-pedido="1"] [name="estado"]')?.value==='CONFIRMADO');
   assert.equal(await form().locator('[name="estado"]').inputValue(),'CONFIRMADO');
   assert.equal(await form().locator('.referencia-pedido').isVisible(),false);
   modo='normal';await form().locator('[name="estado"]').selectOption('ENVIADO');
   await form().getByRole('button').click();await page.locator('#mensaje-pedidos').getByText('Pedido #1 actualizado a ENVIADO.').waitFor();
+  await page.waitForFunction(()=>document.querySelector('form[data-pedido="1"] [name="estado"]')?.value==='ENTREGADO');
   assert.equal(await form().locator('[name="estado"]').inputValue(),'ENTREGADO');
   const cancelarForm=page.locator('form[data-pedido="2"]');await cancelarForm.locator('select').selectOption('CANCELADO');
   assert.equal(await cancelarForm.locator('[name="referenciaPago"]').isDisabled(),true);
   const anteriores=requests.length;await cancelarForm.getByRole('button').click();assert.equal(requests.length,anteriores);
   cancelar=true;await cancelarForm.getByRole('button').click();
   await page.locator('#mensaje-pedidos').getByText('Pedido #2 actualizado a CANCELADO.').waitFor();
+  await page.locator('form[data-pedido="2"]').waitFor({state:'detached'});
   assert.equal(await page.locator('form[data-pedido="2"]').count(),0);
   assert.equal(await page.locator('form[data-pedido="4"]').count(),0);
   assert.deepEqual(requests.at(-1).datos,{estado:'CANCELADO',referenciaPago:null});
