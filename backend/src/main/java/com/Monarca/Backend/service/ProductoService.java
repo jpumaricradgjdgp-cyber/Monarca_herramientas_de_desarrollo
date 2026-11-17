@@ -3,6 +3,7 @@ package com.Monarca.Backend.service;
 import com.Monarca.Backend.dto.ProductoDto;
 import com.Monarca.Backend.dto.ProductoResponseDto;
 import com.Monarca.Backend.dto.VarianteProductoResponseDto;
+import com.Monarca.Backend.exception.RecursoNoEncontradoException;
 import com.Monarca.Backend.model.Categoria;
 import com.Monarca.Backend.model.ImagenProducto;
 import com.Monarca.Backend.model.Producto;
@@ -127,7 +128,7 @@ public class ProductoService {
         validarDtoActualizacion(dto);
 
         Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado"));
         aplicarCambiosProducto(producto, dto);
         producto = productoRepository.save(producto);
 
@@ -223,13 +224,13 @@ public class ProductoService {
 
     private VarianteProducto buscarVarianteCoincidente(List<VarianteProducto> variantes, ProductoDto dto) {
         if (dto.getTalla() == null || dto.getColor() == null) {
-            throw new RuntimeException("El producto tiene varias variantes. Debes indicar talla y color.");
+            throw new IllegalArgumentException("El producto tiene varias variantes. Debes indicar talla y color.");
         }
         return variantes.stream()
                 .filter(v -> dto.getTalla().equalsIgnoreCase(v.getTalla())
                         && dto.getColor().equalsIgnoreCase(v.getColor()))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("No se encontró la variante indicada"));
+                .orElseThrow(() -> new IllegalArgumentException("No se encontró la variante indicada"));
     }
 
     // =========================================================
@@ -239,7 +240,7 @@ public class ProductoService {
     @Transactional
     public void eliminar(Long id) {
         Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Producto no encontrado"));
         producto.setActivo(false);
         productoRepository.save(producto);
     }
@@ -250,7 +251,7 @@ public class ProductoService {
 
     private Categoria resolverCategoria(String nombre) {
         return categoriaRepository.findByNombreIgnoreCase(nombre)
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada: " + nombre));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Categoría no encontrada: " + nombre));
     }
 
     private VarianteProducto nuevaVariante(Producto producto) {
@@ -300,16 +301,16 @@ public class ProductoService {
 
     private void validarDtoCreacion(ProductoDto dto) {
         if (dto == null) {
-            throw new RuntimeException("Datos del producto requeridos");
+            throw new IllegalArgumentException("Datos del producto requeridos");
         }
         if (!tieneTexto(dto.getNombre())) {
-            throw new RuntimeException("El nombre es obligatorio");
+            throw new IllegalArgumentException("El nombre es obligatorio");
         }
         if (!tieneTexto(dto.getCategoria())) {
-            throw new RuntimeException("La categoría es obligatoria");
+            throw new IllegalArgumentException("La categoría es obligatoria");
         }
         if (dto.getPrecio() == null || esNegativo(dto.getPrecio())) {
-            throw new RuntimeException("El precio no es válido");
+            throw new IllegalArgumentException("El precio no es válido");
         }
         validarStock(dto);
         validarImagen(dto.getImg());
@@ -331,10 +332,10 @@ public class ProductoService {
 
     private void validarStock(ProductoDto dto) {
         if (dto.getStock() != null && dto.getStock() < 0) {
-            throw new RuntimeException("El stock no puede ser negativo");
+            throw new IllegalArgumentException("El stock no puede ser negativo");
         }
         if (dto.getStockMinimo() != null && dto.getStockMinimo() < 0) {
-            throw new RuntimeException("El stock mínimo no puede ser negativo");
+            throw new IllegalArgumentException("El stock mínimo no puede ser negativo");
         }
     }
 
