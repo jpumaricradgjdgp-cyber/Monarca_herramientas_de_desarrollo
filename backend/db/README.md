@@ -1,5 +1,7 @@
 # Diagnóstico del esquema Monarca
 
+> Diagrama y explicación de las tablas: [MODELO_DATOS.md](MODELO_DATOS.md).
+
 Consultas de solo lectura basadas en las 10 entidades de esta rama. Consultan
 metadatos; no crean tablas, cambian restricciones ni muestran registros de clientes.
 El backend usa `spring.jpa.hibernate.ddl-auto=validate`: necesita un esquema ya creado.
