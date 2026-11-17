@@ -1,9 +1,19 @@
 # Monarca
 
+[![Pruebas Monarca](https://github.com/jpumaricradgjdgp-cyber/Monarca_herramientas_de_desarrollo/actions/workflows/pruebas.yml/badge.svg?branch=main)](https://github.com/jpumaricradgjdgp-cyber/Monarca_herramientas_de_desarrollo/actions/workflows/pruebas.yml)
+
 Tienda en línea de moda (tops, bottoms, calzado y accesorios) desarrollada en el
 curso **Herramientas de Desarrollo** (UTP). El proyecto aplica Git y GitHub para
 trabajar en equipo: ramas por funcionalidad, pull requests revisados por otro
 integrante y pruebas automáticas en cada PR.
+
+## Entrega académica
+
+- [Informe del Avance 2 y matriz del equipo](docs/INFORME_AVANCE_2.md)
+- [Índice de evidencias](docs/EVIDENCIAS.md)
+- [Ejercicio controlado de conflictos](docs/CONFLICTOS.md)
+- [Preparación del lanzamiento](docs/LANZAMIENTO.md)
+- [Guion de exposición](docs/GUION_EXPOSICION.md)
 
 ## Funcionalidades
 
@@ -41,6 +51,9 @@ Monarca_herramientas_de_desarrollo/
 │   ├── Paginas/          Tops, Bottoms, Calzado, Accesorios, producto, checkout, login, admin...
 │   ├── css/  js/  img/
 │   └── tests/            Pruebas de navegador con Playwright
+├── docs/                 Informes, evidencias y guion de exposición
+├── scripts/              Ejercicio local reproducible de conflictos
+├── .github/              Workflow de pruebas y plantilla de Pull Request
 ├── PEDIDOS.md            Gestión de pedidos y pagos (administrador)
 └── PRUEBAS.md            Cómo ejecutar las pruebas
 ```
@@ -62,7 +75,7 @@ El backend **no guarda claves en el código**: las lee de variables de entorno.
 | `DB_URL` | Sí | URL JDBC de PostgreSQL, p. ej. `jdbc:postgresql://<host>:5432/postgres` |
 | `DB_USERNAME` | Sí | Usuario de la base de datos |
 | `DB_PASSWORD` | Sí | Contraseña de la base de datos |
-| `JWT_SECRET` | Sí | Clave para firmar los tokens de sesión |
+| `JWT_SECRET` | Sí | Clave para firmar los tokens de sesión (mínimo 32 bytes) |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM` | No | SMTP para recuperar contraseña |
 | `PASSWORD_RESET_URL` | No | Página del frontend a la que apunta el correo de recuperación |
 

@@ -74,4 +74,4 @@ Para ejecutar todo, sigue PRUEBAS.md.
 Pendiente de validación manual contra Supabase: crear un pedido de prueba, confirmar
 su pago con una referencia y avanzar sus estados; crear otro y cancelarlo para
 comprobar el stock. Esta prueba real debe hacerse con datos de prueba y un administrador.
-La ejecución de GitHub Actions de este nuevo PR queda pendiente hasta subirlo.
+El flujo integrado está cubierto por la ejecución aprobada de main: [Actions 39141758866](https://github.com/jpumaricradgjdgp-cyber/Monarca_herramientas_de_desarrollo/actions/runs/39141758866). La prueba manual real anterior sigue pendiente.
