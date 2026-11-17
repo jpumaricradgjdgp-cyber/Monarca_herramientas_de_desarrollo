@@ -12,8 +12,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         opciones.classList.toggle('activo', abierto);
         opciones.hidden = !abierto;
     }));
+    const destino = contenedor || recomendados;
+    destino.setAttribute('aria-live', 'polite');
+    destino.setAttribute('aria-busy', 'true');
+    destino.innerHTML = '<p class="estado-tienda">Cargando productos…</p>';
     try {
         const productos = await obtenerTienda('/productos');
+        destino.removeAttribute('aria-busy');
         if (recomendados) {
             const destacados = productos.filter(p => p.destacado);
             recomendados.innerHTML = (destacados.length ? destacados : productos).slice(0, 4).map(p => `
@@ -64,5 +69,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             else if (variantes.length) location.href = paginaTienda(`producto.html?id=${producto.idProducto}`);
         });
         renderizar();
-    } catch (error) { (contenedor || recomendados).textContent = error.message; }
+    } catch (error) {
+        destino.removeAttribute('aria-busy');
+        const motivo = error instanceof TypeError
+            ? 'No se pudo conectar con el servidor. Verifica tu conexión e inténtalo de nuevo.'
+            : error.message;
+        destino.innerHTML = `<div class="estado-tienda estado-error" role="alert"><p>${escaparHTML(motivo)}</p>
+            <button type="button" class="btn-reintentar">Reintentar</button></div>`;
+        destino.querySelector('.btn-reintentar').addEventListener('click', () => location.reload());
+    }
 });

@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     mostrarPanel();
 
     async function enviar(ruta, datos) {
-        const respuesta = await fetch(`http://localhost:8080/api/auth/${ruta}`, {
+        const respuesta = await fetch(`${TIENDA_API}/auth/${ruta}`, {
             method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(datos)
         });
         const texto = await respuesta.text();
