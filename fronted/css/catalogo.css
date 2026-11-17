@@ -40,3 +40,23 @@
         margin-top: 10px;
     }
 }
+
+/* Estados de carga y error del catálogo */
+.estado-tienda {
+    grid-column: 1 / -1;
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #666;
+}
+.estado-error { color: #a12a2a; }
+.btn-reintentar {
+    margin-top: 0.75rem;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+.btn-reintentar:hover,
+.btn-reintentar:focus-visible { background: #a12a2a; color: #fff; }

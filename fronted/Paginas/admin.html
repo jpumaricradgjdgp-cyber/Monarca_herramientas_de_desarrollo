@@ -238,7 +238,7 @@
     async function eliminarProducto(id) {
         if (confirm('¿Estás seguro de eliminar este producto?')) {
             try {
-                const respuesta = await fetch(`http://localhost:8080/api/productos/${id}`, {
+                const respuesta = await fetch(`${TIENDA_API}/productos/${id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token_monarca') }
                 });
@@ -316,8 +316,8 @@
 
             const metodo = document.getElementById('prod-id').value ? 'PUT' : 'POST';
             const url = document.getElementById('prod-id').value ?
-                `http://localhost:8080/api/productos/${document.getElementById('prod-id').value}` :
-                'http://localhost:8080/api/productos';
+                `${TIENDA_API}/productos/${document.getElementById('prod-id').value}` :
+                `${TIENDA_API}/productos`;
 
             try {
                 const respuesta = await fetch(url, {
@@ -387,7 +387,7 @@
         if (!token) return;
 
         try {
-            const respuesta = await fetch('http://localhost:8080/api/productos', {
+            const respuesta = await fetch(`${TIENDA_API}/productos`, {
                 method: 'GET',
                 headers: { 'Authorization': 'Bearer ' + token }
             });
