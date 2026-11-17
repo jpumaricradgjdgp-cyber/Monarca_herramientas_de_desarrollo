@@ -134,4 +134,32 @@ class FlujoApiTest {
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.error").value(
                         "No se pudo guardar el estado. Actualiza la lista y revisa los datos del pedido."));
     }
+    @Test void productoInexistenteDevuelve404ConMensaje() throws Exception {
+        String admin = token("ADMIN");
+        mvc.perform(delete("/api/productos/999").header("Authorization", admin))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.error").value("Producto no encontrado"));
+        mvc.perform(put("/api/productos/999").header("Authorization", admin)
+                .contentType("application/json").content("{\"nombre\":\"Top nuevo\"}"))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.error").value("Producto no encontrado"));
+    }
+    @Test void datosInvalidosDevuelven400ConMensaje() throws Exception {
+        String admin = token("ADMIN");
+        mvc.perform(post("/api/productos").header("Authorization", admin)
+                .contentType("application/json").content("{\"nombre\":\"Top\",\"categoria\":\"Tops\",\"precio\":-5}"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").value("El precio no es válido"));
+        mvc.perform(post("/api/productos").header("Authorization", admin)
+                .contentType("application/json").content("{\"nombre\":\"Top\",\"categoria\":\"Inexistente\",\"precio\":10}"))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.error").value("Categoría no encontrada: Inexistente"));
+        verify(productos, never()).save(any());
+    }
+    @Test void jsonMalFormadoDevuelve400SinDetallesInternos() throws Exception {
+        mvc.perform(post("/api/productos").header("Authorization", token("ADMIN"))
+                .contentType("application/json").content("{\"precio\": \"no-es-numero\""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("La solicitud tiene un formato inválido."));
+    }
+    @Test void clienteSigueRecibiendo403ConElManejadorGlobal() throws Exception {
+        mvc.perform(delete("/api/productos/999").header("Authorization", token("CLIENTE")))
+                .andExpect(status().isForbidden());
+    }
 }
