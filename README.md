@@ -35,7 +35,7 @@ Monarca_herramientas_de_desarrollo/
 │   │   ├── model/        Entidades
 │   │   ├── dto/          Objetos de entrada/salida de la API
 │   │   └── security/     JWT, filtros y configuración de seguridad
-│   └── db/               Consultas de diagnóstico del esquema (ver db/README.md)
+│   └── db/               Modelo de datos (MODELO_DATOS.md) y diagnóstico del esquema
 ├── fronted/              Sitio web estático
 │   ├── index.html
 │   ├── Paginas/          Tops, Bottoms, Calzado, Accesorios, producto, checkout, login, admin...
